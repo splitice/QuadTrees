@@ -29,7 +29,7 @@ namespace QuadTrees.Common
         protected QuadTreeCommon()
         {
             _quadTreePointRoot =
-                CreateNode(new RectangleF(float.MinValue/2, float.MinValue/2, float.MaxValue/2, float.MaxValue/2));
+                CreateNode(new RectangleF(float.MinValue/2, float.MinValue/2, float.MaxValue, float.MaxValue));
         } 
 
         /// <summary>

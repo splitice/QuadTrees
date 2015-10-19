@@ -13,4 +13,5 @@ script:
   - export EnableNuGetPackageRestore=false
   - mozroots --import --sync
   - xbuild CI.proj
+  - sudo nunit-console -framework=4.0 ./QuadTrees.Tests/bin/Debug/QuadTrees.Tests.dll -exclude Integration,NotWorkingOnMono
   - travis_retry bash travis-ci/nuget-upload.sh
