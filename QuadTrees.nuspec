@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package>
+	<metadata xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+		<id>QuadTrees</id>
+		<version>$version$</version>
+		<title>IPTables.Net</title>
+		<authors>SplitIce</authors>
+		<owners>SplitIce</owners>
+		<projectUrl>https://github.com/splitice/QuadTrees</projectUrl>
+		<requireLicenseAcceptance>false</requireLicenseAcceptance>
+		<description>A library for high performance QuadTrees of various forms</description>
+		<releaseNotes>Automatic Updates via GitHub</releaseNotes>
+		<copyright>Copyright Never</copyright>
+		<language>en-US</language>
+	</metadata>
+	<files>
+		<file src="bin/Release/QuadTrees.dll" target="lib" />
+	</files>
+</package>
