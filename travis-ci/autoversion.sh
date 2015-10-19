@@ -14,7 +14,7 @@ function update_ai {
 	echo "[assembly: AssemblyVersion(\"$VERSION_STR.$REVISION\")]" >> $f/Properties/AssemblyInfo.cs
 	echo "[assembly: AssemblyFileVersion(\"$VERSION_STR.$REVISION\")]" >> $f/Properties/AssemblyInfo.cs
 	
-	for nuspec in $f/*.nuspec; do
+	for nuspec in $f/../*.nuspec; do
 		if [[ -f "$nuspec" ]]; then
 			echo "Processing nuspec file: $nuspec"
 			padded=$(printf "%04d" $REVISION)
