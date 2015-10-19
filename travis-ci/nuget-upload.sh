@@ -7,6 +7,6 @@ P=$DIR/../$1
 
 cd $P
 
-mono --runtime=v4.0 ../.nuget/NuGet.exe pack *.nuspec -Prop Configuration=Release -BasePath $P
+mono --runtime=v4.0 $DIR/../.nuget/NuGet.exe pack *.nuspec -Prop Configuration=Release -BasePath $P
 
-mono --runtime=v4.0 ../.nuget/NuGet.exe push *.nupkg -ApiKey $NUGET_API
+mono --runtime=v4.0 $DIR/../.nuget/NuGet.exe push *.nupkg -ApiKey $NUGET_API
