@@ -5,7 +5,7 @@ using QuadTrees.QTreeRect;
 namespace QuadTrees
 {
     /// <summary>
-    /// A QuadTree Object that provides fast and efficient storage of objects in a world space.
+    /// A QuadTree Object that provides fast and efficient storage of Rectangles in a world space, queried using Rectangles.
     /// </summary>
     /// <typeparam name="T">Any object implementing IQuadStorable.</typeparam>
     public class QuadTreeRectPointInverse<T> : QuadTreeCommon<T, QuadTreeRectNode<T, PointF>, PointF> where T : IRectQuadStorable

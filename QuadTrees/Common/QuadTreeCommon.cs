@@ -23,10 +23,13 @@ namespace QuadTrees.Common
 
         #region Constructor
 
+        /// <summary>
+        /// Initialize a QuadTree covering the full range of values possible
+        /// </summary>
         protected QuadTreeCommon()
         {
             _quadTreePointRoot =
-                CreateNode(new RectangleF(float.MaxValue/-2, float.MaxValue/-2, float.MaxValue, float.MaxValue));
+                CreateNode(new RectangleF(float.MinValue/2, float.MinValue/2, float.MaxValue/2, float.MaxValue/2));
         } 
 
         /// <summary>
@@ -72,6 +75,11 @@ namespace QuadTrees.Common
             return _quadTreePointRoot.GetObjects(rect);
         }
 
+        /// <summary>
+        /// Query the QuadTree and return an enumerator for the results
+        /// </summary>
+        /// <param name="rect"></param>
+        /// <returns></returns>
         public IEnumerable<TObject> EnumObjects(TQuery rect)
         {
             return _quadTreePointRoot.EnumObjects(rect);
@@ -282,9 +290,13 @@ namespace QuadTrees.Common
 
         #endregion
 
-
+        /// <summary>
+        /// Add a range of objects to the Quad Tree
+        /// </summary>
+        /// <param name="allPointsDbscan"></param>
         public void AddRange(IEnumerable<TObject> allPointsDbscan)
         {
+            //TODO: more optimially?
             foreach (var ap in allPointsDbscan)
             {
                 Add(ap);

@@ -643,7 +643,6 @@ namespace QuadTrees.Common
         protected override bool QueryIntersects(PointF search, RectangleF rect)
         {
             return false;
-            //return rect.Contains(search)
         }
     }
 

@@ -3,7 +3,7 @@ using System.Drawing;
 
 namespace QuadTrees.Helper
 {
-    public static class RectangleHelper
+    internal static class RectangleHelper
     {
         public static bool Intersects(this RectangleF a, RectangleF b)
         {

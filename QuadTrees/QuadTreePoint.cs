@@ -5,7 +5,7 @@ using QuadTrees.QTreePoint;
 namespace QuadTrees
 {
     /// <summary>
-    /// A QuadTree Object that provides fast and efficient storage of objects in a world space.
+    /// A QuadTree Object that provides fast and efficient storage of Points in a world space, queried using Rectangles.
     /// </summary>
     /// <typeparam name="T">Any object implementing IQuadStorable.</typeparam>
     public class QuadTreePoint<T> : QuadTreeCommon<T, QuadTreePointNode<T>, RectangleF> where T : IPointQuadStorable
