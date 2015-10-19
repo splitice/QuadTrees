@@ -1,0 +1,16 @@
+language: c
+
+git:
+  depth: 300
+
+install:
+  - sudo add-apt-repository ppa:directhex/ppa -y
+  - sudo apt-get update
+  - sudo apt-get -qq install mono-devel mono-gmcs mono-utils mono-complete libmono-system2.0-cil libmono-corlib2.0-cil mono-2.0-gac nunit-console realpath
+  
+script:
+  - bash travis-ci/autoversion.sh QuadTrees
+  - export EnableNuGetPackageRestore=false
+  - mozroots --import --sync
+  - xbuild CI.proj
+  - travis_retry bash travis-ci/nuget-upload.sh QuadTrees
