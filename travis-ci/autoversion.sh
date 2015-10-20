@@ -17,7 +17,7 @@ function update_ai {
 	for nuspec in $f/../*.nuspec; do
 		if [[ -f "$nuspec" ]]; then
 			echo "Processing nuspec file: $nuspec"
-			if [[ $VERSION =~ "^v?[1-9]" && $REVISION == "0" ]]; then
+			if [[ $VERSION_STR =~ "^([1-9])" ]]; then
 				sed -i.bak "s/\\\$version\\\$/$VERSION_STR/g" $nuspec
 			else
 				padded=$(printf "%04d" $REVISION)
