@@ -22,7 +22,7 @@ function update_ai {
 			else
 				LAST_PART=$(echo "$VERSION_STR" | sed 's/.\+\([0-9]\+\)$/\1/')
 				let LAST_PART=$LAST_PART+1
-				VERSION_STR=$(echo "$VERSION_STR" | sed 's/.\+\([0-9]\+\)$/'$LAST_PART'/')
+				VERSION_STR=$(echo "$VERSION_STR" | sed 's/\.\([0-9]\+\)$/.'$LAST_PART'/')
 				padded=$(printf "%04d" $REVISION)
 				sed -i.bak "s/\\\$version\\\$/$VERSION_STR-cibuild$padded/g" $nuspec
 			fi
