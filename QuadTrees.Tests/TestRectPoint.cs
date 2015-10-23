@@ -57,7 +57,6 @@ namespace QuadTrees.Tests
         [TestCase]
         public void TestListQueryEnum()
         {
-
             QuadTreeRectPointInverse<QTreeObject> qtree = new QuadTreeRectPointInverse<QTreeObject>();
             qtree.AddRange(new List<QTreeObject>
             {

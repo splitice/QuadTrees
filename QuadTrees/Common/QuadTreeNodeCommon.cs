@@ -189,10 +189,7 @@ namespace QuadTrees.Common
             }
 
             _objectCount = nodeIdx;
-            if (nodeIdx == 0)
-            {
-                _objects = null;
-            }
+            _objects = nodeIdx == 0 ? null : nodeList;
         }
 
         protected abstract TNode CreateNode(RectangleF rectangleF);
