@@ -79,5 +79,21 @@ namespace QuadTrees.Tests
             var list = qtree.GetAllObjects();
             Assert.AreEqual(2, list.Count());
         }
+        [TestCase]
+        public void TestAddMany()
+        {
+            Random r = new Random(1000);
+            QuadTreeRect<QTreeObject> qtree = new QuadTreeRect<QTreeObject>();
+            for (int i = 0; i < 10000; i++)
+            {
+                qtree.Add(new QTreeObject(new RectangleF(r.Next(0, 1000) / 1000f, r.Next(0, 1000) / 1000f, r.Next(1000, 20000) / 1000f, r.Next(1000, 20000) / 1000f)));
+            }
+
+            var result = qtree.GetObjects(new RectangleF(-100, -100, 200, 200));
+            Assert.AreEqual(result.Distinct().Count(), result.Count);
+
+            result = qtree.GetObjects(new RectangleF(-.100f, -.100f, .200f, .200f));
+            Assert.AreEqual(result.Distinct().Count(), result.Count);
+        }
     }
 }

@@ -93,7 +93,15 @@ namespace QuadTrees.Common
         /// <param name="results">A reference to a list that will be populated with the results.</param>
         public void GetObjects(TQuery rect, List<TObject> results)
         {
-            _quadTreePointRoot.GetObjects(rect, results.Add);
+            Action<TObject> cb = results.Add;
+#if DEBUG
+            cb = (a) =>
+            {
+                Debug.Assert(!results.Contains(a));
+                results.Add(a);
+            };
+#endif
+            _quadTreePointRoot.GetObjects(rect, cb);
         }
 
 
