@@ -40,10 +40,5 @@ namespace QuadTrees.QTreePoint
         {
             return searchRect.Contains(data.Point);
         }
-
-        public bool Contains(PointF middlePoint)
-        {
-            return Rect.Contains(middlePoint);
-        }
     }
 }

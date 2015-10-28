@@ -346,6 +346,10 @@ namespace QuadTrees.Common
         }
 
         #endregion
+        public bool Contains(PointF point)
+        {
+            return Rect.Contains(point);
+        }
 
         #region Internal Methods
 
