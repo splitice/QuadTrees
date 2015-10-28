@@ -12,7 +12,7 @@ namespace QuadTrees.Common
         #region Constants
 
         // How many objects can exist in a QuadTree before it sub divides itself
-        private const int MaxObjectsPerNode = 10;//scales up to about 16 on removal
+        public const int MaxObjectsPerNode = 10;//scales up to about 16 on removal
 
         #endregion
 

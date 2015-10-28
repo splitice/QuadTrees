@@ -58,8 +58,12 @@ namespace QuadTrees
             return EncodeMorton2(pX, pY);
         }
 
-        public void AddRangeLarge(T[] points)
+        public void AddBulk(T[] points)
         {
+            if (QuadTreePointRoot.ChildTl != null)
+            {
+                throw new InvalidOperationException("Bulk add can only be performed on an empty QuadTree");
+            }
             float minX = float.MaxValue, maxX = float.MinValue, minY = float.MaxValue, maxY = float.MinValue;
             foreach (var p in points)
             {
@@ -85,11 +89,10 @@ namespace QuadTrees
             InsertStore(QuadTreePointRoot, range, 0, range.Length);
         }
 
-        private const int desired = 8;
         private void InsertStore(QuadTreePointNode<T> node, KeyValuePair<uint, T>[] range, int start, int end)
         {
             var count = end - start;
-            if (count > desired && node.QuadRect.Width > 0.1 && node.QuadRect.Height > 0.1)
+            if (count > QuadTreePointNode<T>.MaxObjectsPerNode && node.QuadRect.Width > 0.01 && node.QuadRect.Height > 0.01)
             {
                 var quater = count/4;
                 var quater1 = start + quater + (count % 4);
