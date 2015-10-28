@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Drawing;
 using QuadTrees.Common;
 
@@ -14,7 +15,7 @@ namespace QuadTrees.QTreePoint
         {
         }
 
-        public QuadTreePointNode(int x, int y, int width, int height)
+        public QuadTreePointNode(float x, float y, float width, float height)
             : base(x, y, width, height)
         {
         }
@@ -26,6 +27,7 @@ namespace QuadTrees.QTreePoint
 
         protected override QuadTreePointNode<T> CreateNode(RectangleF rectangleF)
         {
+            VerifyNodeAssertions(rectangleF);
             return new QuadTreePointNode<T>(this, rectangleF);
         }
 
@@ -37,6 +39,11 @@ namespace QuadTrees.QTreePoint
         protected override bool CheckIntersects(RectangleF searchRect, T data)
         {
             return searchRect.Contains(data.Point);
+        }
+
+        public bool Contains(PointF middlePoint)
+        {
+            return Rect.Contains(middlePoint);
         }
     }
 }

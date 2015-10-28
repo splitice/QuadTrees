@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Linq;
 
 namespace QuadTrees.Common
 {
@@ -10,12 +11,12 @@ namespace QuadTrees.Common
     {
         #region Private Members
 
-        private readonly Dictionary<TObject, QuadTreeObject<TObject, TNode>> _wrappedDictionary = new Dictionary<TObject, QuadTreeObject<TObject, TNode>>();
+        protected readonly Dictionary<TObject, QuadTreeObject<TObject, TNode>> WrappedDictionary = new Dictionary<TObject, QuadTreeObject<TObject, TNode>>();
 
         // Alternate method, use Parallel arrays
 
         // The root of this quad tree
-        private readonly TNode _quadTreePointRoot;
+        protected readonly TNode QuadTreePointRoot;
 
         #endregion
 
@@ -28,7 +29,7 @@ namespace QuadTrees.Common
         /// </summary>
         protected QuadTreeCommon()
         {
-            _quadTreePointRoot =
+            QuadTreePointRoot =
                 CreateNode(new RectangleF(float.MinValue/2, float.MinValue/2, float.MaxValue, float.MaxValue));
         } 
 
@@ -38,7 +39,7 @@ namespace QuadTrees.Common
         /// <param name="rect">The area this QuadTree object will encompass.</param>
         protected QuadTreeCommon(RectangleF rect)
         {
-            _quadTreePointRoot = CreateNode(rect);
+            QuadTreePointRoot = CreateNode(rect);
         }
 
 
@@ -51,7 +52,7 @@ namespace QuadTrees.Common
         /// <param name="height">The height of the area rectangle.</param>
         protected QuadTreeCommon(float x, float y, float width, float height)
         {
-            _quadTreePointRoot = CreateNode(new RectangleF(x, y, width, height));
+            QuadTreePointRoot = CreateNode(new RectangleF(x, y, width, height));
         }
 
         #endregion
@@ -63,7 +64,7 @@ namespace QuadTrees.Common
         /// </summary>
         public RectangleF QuadRect
         {
-            get { return _quadTreePointRoot.QuadRect; }
+            get { return QuadTreePointRoot.QuadRect; }
         }
 
         /// <summary>
@@ -72,7 +73,7 @@ namespace QuadTrees.Common
         /// <param name="rect">The RectangleF to find objects in.</param>
         public List<TObject> GetObjects(TQuery rect)
         {
-            return _quadTreePointRoot.GetObjects(rect);
+            return QuadTreePointRoot.GetObjects(rect);
         }
 
         /// <summary>
@@ -82,7 +83,7 @@ namespace QuadTrees.Common
         /// <returns></returns>
         public IEnumerable<TObject> EnumObjects(TQuery rect)
         {
-            return _quadTreePointRoot.EnumObjects(rect);
+            return QuadTreePointRoot.EnumObjects(rect);
         } 
 
 
@@ -101,13 +102,13 @@ namespace QuadTrees.Common
                 results.Add(a);
             };
 #endif
-            _quadTreePointRoot.GetObjects(rect, cb);
+            QuadTreePointRoot.GetObjects(rect, cb);
         }
 
 
         public void GetObjects(TQuery rect, Action<TObject> add)
         {
-            _quadTreePointRoot.GetObjects(rect, add);
+            QuadTreePointRoot.GetObjects(rect, add);
         }
 
         /// <summary>
@@ -115,7 +116,7 @@ namespace QuadTrees.Common
         /// </summary>
         public IEnumerable<TObject> GetAllObjects()
         {
-            return _wrappedDictionary.Keys;
+            return WrappedDictionary.Keys;
         }
 
 
@@ -126,9 +127,9 @@ namespace QuadTrees.Common
         public bool Move(TObject item)
         {
             QuadTreeObject<TObject, TNode> obj;
-            if (_wrappedDictionary.TryGetValue(item, out obj))
+            if (WrappedDictionary.TryGetValue(item, out obj))
             {
-                _quadTreePointRoot.Move(obj);
+                QuadTreePointRoot.Move(obj);
                 return true;
             }
             return false;
@@ -147,13 +148,13 @@ namespace QuadTrees.Common
         public void Add(TObject item)
         {
             var wrappedObject = new QuadTreeObject<TObject, TNode>(item);
-            if (_wrappedDictionary.ContainsKey(item))
+            if (WrappedDictionary.ContainsKey(item))
             {
                 throw new ArgumentException("Object already exists in index");
             }
-            _wrappedDictionary.Add(item, wrappedObject);
-            _quadTreePointRoot.Insert(wrappedObject);
-            Debug.Assert(_wrappedDictionary.Count == _quadTreePointRoot.Count);
+            WrappedDictionary.Add(item, wrappedObject);
+            QuadTreePointRoot.Insert(wrappedObject);
+            Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
         }
 
 
@@ -164,8 +165,8 @@ namespace QuadTrees.Common
         ///<exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.Generic.ICollection`1" /> is read-only. </exception>
         public void Clear()
         {
-            _wrappedDictionary.Clear();
-            _quadTreePointRoot.Clear();
+            WrappedDictionary.Clear();
+            QuadTreePointRoot.Clear();
         }
 
 
@@ -180,7 +181,7 @@ namespace QuadTrees.Common
         ///<param name="item">The object to locate in the <see cref="T:System.Collections.Generic.ICollection`1" />.</param>
         public bool Contains(TObject item)
         {
-            return _wrappedDictionary.ContainsKey(item);
+            return WrappedDictionary.ContainsKey(item);
         }
 
 
@@ -195,7 +196,7 @@ namespace QuadTrees.Common
         ///<exception cref="T:System.ArgumentException"><paramref name="array" /> is multidimensional.-or-<paramref name="arrayIndex" /> is equal to or greater than the length of <paramref name="array" />.-or-The number of elements in the source <see cref="T:System.Collections.Generic.ICollection`1" /> is greater than the available space from <paramref name="arrayIndex" /> to the end of the destination <paramref name="array" />.-or-Type <paramref name="T" /> cannot be cast automatically to the type of the destination <paramref name="array" />.</exception>
         public void CopyTo(TObject[] array, int arrayIndex)
         {
-            _wrappedDictionary.Keys.CopyTo(array, arrayIndex);
+            WrappedDictionary.Keys.CopyTo(array, arrayIndex);
         }
 
         ///<summary>
@@ -206,7 +207,15 @@ namespace QuadTrees.Common
         ///</returns>
         public int Count
         {
-            get { return _wrappedDictionary.Count; }
+            get { return WrappedDictionary.Count; }
+        }
+
+        /// <summary>
+        /// Count the number of nodes in the tree
+        /// </summary>
+        public int CountNodes
+        {
+            get { return QuadTreePointRoot.CountNodes; }
         }
 
         ///<summary>
@@ -235,10 +244,10 @@ namespace QuadTrees.Common
         public bool Remove(TObject item)
         {
             QuadTreeObject<TObject, TNode> obj;
-            if (_wrappedDictionary.TryGetValue(item, out obj))
+            if (WrappedDictionary.TryGetValue(item, out obj))
             {
-                _quadTreePointRoot.Delete(obj, true);
-                _wrappedDictionary.Remove(item);
+                QuadTreePointRoot.Delete(obj, true);
+                WrappedDictionary.Remove(item);
                 return true;
             }
             return false;
@@ -252,15 +261,15 @@ namespace QuadTrees.Common
         public bool RemoveAll(Func<TObject,bool> whereExpr)
         {
             var set = new HashSet<QuadTreeObject<TObject,TNode>>();
-            foreach(var kv in _wrappedDictionary){
+            foreach(var kv in WrappedDictionary){
                 if (!whereExpr(kv.Key)) continue;
-                _quadTreePointRoot.Delete(kv.Value, false);
+                QuadTreePointRoot.Delete(kv.Value, false);
                 set.Add(kv.Value);
             }
             foreach (var s in set)
             {
                 s.Owner.CleanUpwards();
-                _wrappedDictionary.Remove(s.Data);
+                WrappedDictionary.Remove(s.Data);
             }
             return set.Count != 0;
         }
@@ -279,7 +288,7 @@ namespace QuadTrees.Common
         ///<filterpriority>1</filterpriority>
         public IEnumerator<TObject> GetEnumerator()
         {
-            return _wrappedDictionary.Keys.GetEnumerator();
+            return WrappedDictionary.Keys.GetEnumerator();
         }
 
 

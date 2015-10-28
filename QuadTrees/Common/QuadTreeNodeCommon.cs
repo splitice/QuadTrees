@@ -12,7 +12,7 @@ namespace QuadTrees.Common
         #region Constants
 
         // How many objects can exist in a QuadTree before it sub divides itself
-        private const int MaxObjectsPerNode = 8;//scales up to about 16 on removal
+        private const int MaxObjectsPerNode = 10;//scales up to about 16 on removal
 
         #endregion
 
@@ -21,7 +21,7 @@ namespace QuadTrees.Common
         private QuadTreeObject<T, TNode>[] _objects = null;
         private int _objectCount = 0;
 
-        private RectangleF _rect; // The area this QuadTree represents
+        protected RectangleF Rect; // The area this QuadTree represents
 
         private readonly TNode _parent = null; // The parent of this quad
 
@@ -39,7 +39,7 @@ namespace QuadTrees.Common
         /// </summary>
         public RectangleF QuadRect
         {
-            get { return _rect; }
+            get { return Rect; }
         }
 
         /// <summary>
@@ -52,9 +52,26 @@ namespace QuadTrees.Common
                 int count = _objectCount;
 
                 // Add the objects that are contained in the children
-                if (_childTl != null)
+                if (ChildTl != null)
                 {
-                    count += _childTl.Count + _childTr.Count + _childBl.Count + _childBr.Count;
+                    count += ChildTl.Count + ChildTr.Count + ChildBl.Count + ChildBr.Count;
+                }
+
+                return count;
+            }
+        }
+
+        public int CountNodes
+        {
+            get
+            {
+
+                int count = _objectCount;
+
+                // Add the objects that are contained in the children
+                if (ChildTl != null)
+                {
+                    count += ChildTl.CountNodes + ChildTr.CountNodes + ChildBl.CountNodes + ChildBr.CountNodes + 4;
                 }
 
                 return count;
@@ -66,7 +83,27 @@ namespace QuadTrees.Common
         /// </summary>
         public bool IsEmpty
         {
-            get { return _childTl == null && _objectCount == 0; }
+            get { return ChildTl == null && _objectCount == 0; }
+        }
+
+        public TNode ChildTl
+        {
+            get { return _childTl; }
+        }
+
+        public TNode ChildTr
+        {
+            get { return _childTr; }
+        }
+
+        public TNode ChildBl
+        {
+            get { return _childBl; }
+        }
+
+        public TNode ChildBr
+        {
+            get { return _childBr; }
         }
 
         #endregion
@@ -79,7 +116,7 @@ namespace QuadTrees.Common
         /// <param name="rect">The area this QuadTree object will encompass.</param>
         protected QuadTreeNodeCommon(RectangleF rect)
         {
-            _rect = rect;
+            Rect = rect;
         }
 
 
@@ -90,9 +127,9 @@ namespace QuadTrees.Common
         /// <param name="y">The top-right position of the area rectangle.</param>
         /// <param name="width">The width of the area rectangle.</param>
         /// <param name="height">The height of the area rectangle.</param>
-        protected QuadTreeNodeCommon(int x, int y, int width, int height)
+        protected QuadTreeNodeCommon(float x, float y, float width, float height)
         {
-            _rect = new RectangleF(x, y, width, height);
+            Rect = new RectangleF(x, y, width, height);
         }
 
 
@@ -118,6 +155,7 @@ namespace QuadTrees.Common
             }
             else if (_objectCount >= _objects.Length)
             {
+                //Debug.Assert(_parent != null);
                 //throw new IndexOutOfRangeException("Only "+MaxObjectsPerNode+" objects can be stored in each node. Given no subdivisions are you pushing the same unique value in multiple times?");
                 var old = _objects;
                 _objects = new QuadTreeObject<T, TNode>[old.Length * 2];
@@ -153,20 +191,25 @@ namespace QuadTrees.Common
             }
         }
 
+        internal void Subdivide()
+        {
+            // We've reached capacity, subdivide...
+            PointF mid = new PointF(Rect.X + (Rect.Width / 2), Rect.Y + (Rect.Height / 2));
+
+            Subdivide(mid);
+        }
+
 
         /// <summary>
         /// Subdivide this QuadTree and move it's children into the appropriate Quads where applicable.
         /// </summary>
-        private void Subdivide()
+        public void Subdivide(PointF mid)
         {
             // We've reached capacity, subdivide...
-            PointF size = new PointF(_rect.Width / 2, _rect.Height / 2);
-            PointF mid = new PointF(_rect.X + size.X, _rect.Y + size.Y);
-
-            _childTl = CreateNode(new RectangleF(_rect.Left, _rect.Top, size.X, size.Y));
-            _childTr = CreateNode(new RectangleF(mid.X, _rect.Top, size.X, size.Y));
-            _childBl = CreateNode(new RectangleF(_rect.Left, mid.Y, size.X, size.Y));
-            _childBr = CreateNode(new RectangleF(mid.X, mid.Y, size.X, size.Y));
+            _childTl = CreateNode(new RectangleF(Rect.Left, Rect.Top, mid.X - Rect.Left, mid.Y - Rect.Top));
+            _childTr = CreateNode(new RectangleF(mid.X, Rect.Top, Rect.Right - mid.X, mid.Y - Rect.Top));
+            _childBl = CreateNode(new RectangleF(Rect.Left, mid.Y, mid.X - Rect.Left, Rect.Bottom - mid.Y));
+            _childBr = CreateNode(new RectangleF(mid.X, mid.Y, Rect.Right - mid.X, Rect.Bottom - mid.Y));
 
             var nodeList = new QuadTreeObject<T, TNode>[_objectCount];
             int nodeIdx = 0;
@@ -192,8 +235,21 @@ namespace QuadTrees.Common
             _objects = nodeIdx == 0 ? null : nodeList;
         }
 
+        protected void VerifyNodeAssertions(RectangleF rectangleF)
+        {
+            Debug.Assert(rectangleF.Width > 0);
+            Debug.Assert(rectangleF.Height > 0);
+        }
+
         protected abstract TNode CreateNode(RectangleF rectangleF);
 
+        public IEnumerable<TNode> GetChildren()
+        {
+            yield return ChildTl;
+            yield return ChildTr;
+            yield return ChildBl;
+            yield return ChildBr;
+        }
 
         /// <summary>
         /// Get the child Quad that would contain an object.
@@ -202,21 +258,21 @@ namespace QuadTrees.Common
         /// <returns></returns>
         private TNode GetDestinationTree(QuadTreeObject<T, TNode> item)
         {
-            if (CheckContains(_childTl.QuadRect, item.Data))
+            if (CheckContains(ChildTl.QuadRect, item.Data))
             {
-                return _childTl;
+                return ChildTl;
             }
-            if (CheckContains(_childTr.QuadRect, item.Data))
+            if (CheckContains(ChildTr.QuadRect, item.Data))
             {
-                return _childTr;
+                return ChildTr;
             }
-            if (CheckContains(_childBl.QuadRect, item.Data))
+            if (CheckContains(ChildBl.QuadRect, item.Data))
             {
-                return _childBl;
+                return ChildBl;
             }
-            if (CheckContains(_childBr.QuadRect, item.Data))
+            if (CheckContains(ChildBr.QuadRect, item.Data))
             {
-                return _childBr;
+                return ChildBr;
             }
             
             // If a child can't contain an object, it will live in this Quad
@@ -231,7 +287,7 @@ namespace QuadTrees.Common
             if (CheckContains(QuadRect, item.Data))
             {
                 // Good, have we moved inside any of our children?
-                if (_childTl != null)
+                if (ChildTl != null)
                 {
                     TNode dest = GetDestinationTree(item);
                     if (item.Owner != dest)
@@ -259,13 +315,13 @@ namespace QuadTrees.Common
 
         internal void CleanThis()
         {
-            if (_childTl != null)
+            if (ChildTl != null)
             {
                 // If all the children are empty leaves, delete all the children
-                if (_childTl.IsEmpty &&
-                    _childTr.IsEmpty &&
-                    _childBl.IsEmpty &&
-                    _childBr.IsEmpty)
+                if (ChildTl.IsEmpty &&
+                    ChildTr.IsEmpty &&
+                    ChildBl.IsEmpty &&
+                    ChildBr.IsEmpty)
                 {
                     _childTl = null;
                     _childTr = null;
@@ -299,12 +355,12 @@ namespace QuadTrees.Common
         public void Clear()
         {
             // Clear out the children, if we have any
-            if (_childTl != null)
+            if (ChildTl != null)
             {
-                _childTl.Clear();
-                _childTr.Clear();
-                _childBl.Clear();
-                _childBr.Clear();
+                ChildTl.Clear();
+                ChildTr.Clear();
+                ChildBl.Clear();
+                ChildBr.Clear();
 
                 // Set the children to null
                 _childTl = null;
@@ -355,20 +411,20 @@ namespace QuadTrees.Common
         public void Insert(QuadTreeObject<T, TNode> item)
         {
             // If this quad doesn't contain the items rectangle, do nothing, unless we are the root
-            if (!CheckContains(_rect, item.Data))
+            if (!CheckContains(Rect, item.Data))
             {
-                Debug.Assert(_parent == null,
+                Debug.Assert(_parent != null,
                     "We are not the root, and this object doesn't fit here. How did we get here?");
-                if (_parent == null)
+                if (_parent != null)
                 {
                     // This object is outside of the QuadTree bounds, we should add it at the root level
-                    Add(item);
+                    _parent.Insert(item);
                 }
                 return;
             }
 
             if (_objects == null ||
-                (_childTl == null && _objectCount + 1 <= MaxObjectsPerNode))
+                (ChildTl == null && _objectCount + 1 <= MaxObjectsPerNode))
             {
                 // If there's room to add the object, just add it
                 Add(item);
@@ -376,7 +432,7 @@ namespace QuadTrees.Common
             else
             {
                 // No quads, create them and bump objects down where appropriate
-                if (_childTl == null)
+                if (ChildTl == null)
                 {
                     Subdivide();
                 }
@@ -422,7 +478,7 @@ namespace QuadTrees.Common
             TNode node = this as TNode;
             do
             {
-                if (QueryContains(searchRect, node._rect))
+                if (QueryContains(searchRect, node.Rect))
                 {
                     // If the search area completely contains this quad, just get every object this quad and all it's children have
                     allStack = allStack ?? new Stack<TNode>();
@@ -436,12 +492,12 @@ namespace QuadTrees.Common
                                 yield return y.Data;
                             }
                         }
-                        if (node._childTl != null)
+                        if (node.ChildTl != null)
                         {
-                            allStack.Push(node._childTl);
-                            allStack.Push(node._childTr);
-                            allStack.Push(node._childBl);
-                            allStack.Push(node._childBr);
+                            allStack.Push(node.ChildTl);
+                            allStack.Push(node.ChildTr);
+                            allStack.Push(node.ChildBl);
+                            allStack.Push(node.ChildBr);
                         }
                         if (allStack.Count == 0)
                         {
@@ -450,7 +506,7 @@ namespace QuadTrees.Common
                         node = allStack.Pop();
                     } while (true);
                 }
-                else if (QueryIntersects(searchRect, node._rect))
+                else if (QueryIntersects(searchRect, node.Rect))
                 {
                     // Otherwise, if the quad isn't fully contained, only add objects that intersect with the search rectangle
                     if (node._objects != null)
@@ -466,12 +522,12 @@ namespace QuadTrees.Common
                     }
 
                     // Get the objects for the search RectangleF from the children
-                    if (node._childTl != null)
+                    if (node.ChildTl != null)
                     {
-                        stack.Push(node._childTl);
-                        stack.Push(node._childTr);
-                        stack.Push(node._childBl);
-                        stack.Push(node._childBr);
+                        stack.Push(node.ChildTl);
+                        stack.Push(node.ChildTr);
+                        stack.Push(node.ChildBl);
+                        stack.Push(node.ChildBr);
                     }
                 }
                 if (stack.Count == 0)
@@ -492,12 +548,12 @@ namespace QuadTrees.Common
         public void GetObjects(TQuery searchRect, Action<T> put)
         {
             // We can't do anything if the results list doesn't exist
-            if (QueryContains(searchRect,_rect))
+            if (QueryContains(searchRect,Rect))
             {
                 // If the search area completely contains this quad, just get every object this quad and all it's children have
                 GetAllObjects(put);
             }
-            else if (QueryIntersects(searchRect,_rect))
+            else if (QueryIntersects(searchRect,Rect))
             {
                 // Otherwise, if the quad isn't fully contained, only add objects that intersect with the search rectangle
                 if (_objects != null)
@@ -513,22 +569,22 @@ namespace QuadTrees.Common
                 }
 
                 // Get the objects for the search RectangleF from the children
-                if (_childTl != null)
+                if (ChildTl != null)
                 {
-                    Debug.Assert(_childTl != this);
-                    Debug.Assert(_childTr != this);
-                    Debug.Assert(_childBl != this);
-                    Debug.Assert(_childBr != this);
-                    _childTl.GetObjects(searchRect, put);
-                    _childTr.GetObjects(searchRect, put);
-                    _childBl.GetObjects(searchRect, put);
-                    _childBr.GetObjects(searchRect, put);
+                    Debug.Assert(ChildTl != this);
+                    Debug.Assert(ChildTr != this);
+                    Debug.Assert(ChildBl != this);
+                    Debug.Assert(ChildBr != this);
+                    ChildTl.GetObjects(searchRect, put);
+                    ChildTr.GetObjects(searchRect, put);
+                    ChildBl.GetObjects(searchRect, put);
+                    ChildBr.GetObjects(searchRect, put);
                 }
                 else
                 {
-                    Debug.Assert(_childTr == null);
-                    Debug.Assert(_childBl == null);
-                    Debug.Assert(_childBr == null);
+                    Debug.Assert(ChildTr == null);
+                    Debug.Assert(ChildBl == null);
+                    Debug.Assert(ChildBr == null);
                 }
             }
         }
@@ -557,12 +613,12 @@ namespace QuadTrees.Common
             }
 
             // If we have children, get their objects too
-            if (_childTl != null)
+            if (ChildTl != null)
             {
-                _childTl.GetAllObjects(put);
-                _childTr.GetAllObjects(put);
-                _childBl.GetAllObjects(put);
-                _childBr.GetAllObjects(put);
+                ChildTl.GetAllObjects(put);
+                ChildTr.GetAllObjects(put);
+                ChildBl.GetAllObjects(put);
+                ChildBr.GetAllObjects(put);
             }
         }
 
@@ -593,7 +649,8 @@ namespace QuadTrees.Common
         {
         }
 
-        protected QuadTreeNodeCommon(int x, int y, int width, int height) : base(x, y, width, height)
+        protected QuadTreeNodeCommon(float x, float y, float width, float height)
+            : base(x, y, width, height)
         {
         }
 

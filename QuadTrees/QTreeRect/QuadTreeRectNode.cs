@@ -43,6 +43,7 @@ namespace QuadTrees.QTreeRect
         }
         protected override QuadTreeRectNode<T, RectangleF> CreateNode(RectangleF rectangleF)
         {
+            VerifyNodeAssertions(rectangleF);
             return new QuadTreeRectNode<T>(this, rectangleF);
         }
 
