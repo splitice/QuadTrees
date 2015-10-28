@@ -388,7 +388,7 @@ namespace QuadTrees.Common
                 var quater2 = quater1 + quater;
                 var quater3 = quater2 + quater;
                 PointF middlePoint = GetMortonPoint(range[quater2].Value);
-                if (node.Contains(middlePoint) && node.QuadRect.Right != middlePoint.X && node.QuadRect.Bottom != middlePoint.Y)
+                if (node.Contains(middlePoint) && node.QuadRect.Right != middlePoint.X && node.QuadRect.Bottom != middlePoint.Y && node.QuadRect.Left != middlePoint.X && node.QuadRect.Top != middlePoint.Y)
                 {
                     node.Subdivide(middlePoint);
                 }
