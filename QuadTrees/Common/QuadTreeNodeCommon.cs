@@ -61,6 +61,9 @@ namespace QuadTrees.Common
             }
         }
 
+        /// <summary>
+        /// Count all nodes in the graph (Edge + Leaf)
+        /// </summary>
         public int CountNodes
         {
             get
@@ -191,6 +194,9 @@ namespace QuadTrees.Common
             }
         }
 
+        /// <summary>
+        /// Automatically subdivide this QuadTree and move it's children into the appropriate Quads where applicable.
+        /// </summary>
         internal PointF Subdivide()
         {
             // We've reached capacity, subdivide...
@@ -203,7 +209,7 @@ namespace QuadTrees.Common
 
 
         /// <summary>
-        /// Subdivide this QuadTree and move it's children into the appropriate Quads where applicable.
+        /// Manually subdivide this QuadTree and move it's children into the appropriate Quads where applicable.
         /// </summary>
         public void Subdivide(PointF mid)
         {
@@ -276,14 +282,13 @@ namespace QuadTrees.Common
             {
                 return ChildBr;
             }
-            
+
             // If a child can't contain an object, it will live in this Quad
             // This is usually when == midpoint
             return this as TNode;
         }
 
-
-        private void Relocate(QuadTreeObject<T, TNode> item)
+        internal void Relocate(QuadTreeObject<T, TNode> item)
         {
             // Are we still inside our parent?
             if (ContainsObject(item))
@@ -365,16 +370,8 @@ namespace QuadTrees.Common
             // Clear out the children, if we have any
             if (ChildTl != null)
             {
-                ChildTl.Clear();
-                ChildTr.Clear();
-                ChildBl.Clear();
-                ChildBr.Clear();
-
                 // Set the children to null
-                _childTl = null;
-                _childTr = null;
-                _childBl = null;
-                _childBr = null;
+                _childTl = _childTr = _childBl = _childBr = null;
             }
 
             // Clear any objects at this level
@@ -382,6 +379,10 @@ namespace QuadTrees.Common
             {
                 _objectCount = 0;
                 _objects = null;
+            }
+            else
+            {
+                Debug.Assert(_objectCount == 0);
             }
         }
 
@@ -627,23 +628,6 @@ namespace QuadTrees.Common
                 ChildTr.GetAllObjects(put);
                 ChildBl.GetAllObjects(put);
                 ChildBr.GetAllObjects(put);
-            }
-        }
-
-
-        /// <summary>
-        /// Moves the QuadTree object in the tree
-        /// </summary>
-        /// <param name="item">The item that has moved</param>
-        public void Move(QuadTreeObject<T, TNode> item)
-        {
-            if (item.Owner != null)
-            {
-                item.Owner.Relocate(item);
-            }
-            else
-            {
-                Relocate(item);
             }
         }
 

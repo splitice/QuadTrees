@@ -129,7 +129,7 @@ namespace QuadTrees.Common
             QuadTreeObject<TObject, TNode> obj;
             if (WrappedDictionary.TryGetValue(item, out obj))
             {
-                QuadTreePointRoot.Move(obj);
+                obj.Owner.Relocate(obj);
                 return true;
             }
             return false;
