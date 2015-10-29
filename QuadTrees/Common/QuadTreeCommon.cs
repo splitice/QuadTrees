@@ -375,11 +375,11 @@ namespace QuadTrees.Common
                 }
             }
             float width = maxX - minX, height = maxY - minY;
-            var range = points.Select((a) => new KeyValuePair<UInt32, TObject>(MortonIndex2(GetMortonPoint(a), minX, minY, width, height), a)).OrderBy((a) => a.Key).ToArray();
+            var range = points.Select((a) => new KeyValuePair<UInt32, TObject>(MortonIndex2(GetMortonPoint(a), minX, minY, width, height), a)).OrderBy((a) => a.Key).Select((a)=>a.Value).ToArray();
             InsertStore(QuadTreePointRoot, QuadRect.Location, new PointF(QuadRect.Bottom, QuadTreePointRoot.QuadRect.Right), range, 0, range.Length);
         }
 
-        private void InsertStore(TNode node, PointF tl, PointF br, KeyValuePair<uint, TObject>[] range, int start, int end)
+        private void InsertStore(TNode node, PointF tl, PointF br, TObject[] range, int start, int end)
         {
             var count = end - start;
             float area = (br.X - tl.X)*(br.Y - tl.Y);
@@ -389,7 +389,7 @@ namespace QuadTrees.Common
                 var quater1 = start + quater + (count % 4);
                 var quater2 = quater1 + quater;
                 var quater3 = quater2 + quater;
-                PointF middlePoint = GetMortonPoint(range[quater2].Value);
+                PointF middlePoint = GetMortonPoint(range[quater2]);
                 float area1, area2, area3, area4;
                 if (node.ContainsPoint(middlePoint) && tl.X != middlePoint.X && tl.Y != middlePoint.Y && br.X != middlePoint.X && br.Y != middlePoint.Y)
                 {
@@ -409,7 +409,7 @@ namespace QuadTrees.Common
             {
                 for (; start < end; start++)
                 {
-                    var t = range[start].Value;
+                    var t = range[start];
                     var qto = new QuadTreeObject<TObject, TNode>(t);
                     node.Insert(qto);
                     WrappedDictionary.Add(t, qto);
