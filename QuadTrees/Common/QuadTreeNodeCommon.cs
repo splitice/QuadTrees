@@ -329,18 +329,27 @@ namespace QuadTrees.Common
         {
             if (ChildTl != null)
             {
-                // If all the children are empty leaves, delete all the children
-                if (ChildTl.IsEmpty &&
-                    ChildTr.IsEmpty &&
-                    ChildBl.IsEmpty &&
-                    ChildBr.IsEmpty)
+                var emptyChildren = GetChildren().Count((a) => a.IsEmpty);
+ 
+                if (emptyChildren == 4)
                 {
+                    /* If all the children are empty leaves, delete all the children */
                     ClearChildren();
                 }
-
-                /* If has an empty child & no more than OptimizeThreshold worth of data - rebuild more optimally */
-                if (GetChildren().Any((a) => a.IsEmpty) && !HasAtleast(MaxOptimizeDeletionReAdd))
+                else if (emptyChildren == 3)
                 {
+                    /* Only one child has data, this child can be pushed up */
+                    var child = GetChildren().First((a) => !a.IsEmpty);
+                    _objects = child._objects;
+                    _objectCount = child._objectCount;
+                    _childTl = child._childTl;
+                    _childTr = child._childTr;
+                    _childBl = child._childBl;
+                    _childBr = child._childBr;
+                }
+                else if (emptyChildren != 0 && !HasAtleast(MaxOptimizeDeletionReAdd))
+                {
+                    /* If has an empty child & no more than OptimizeThreshold worth of data - rebuild more optimally */
                     List<T> buffer = new List<T>(MaxOptimizeDeletionReAdd);
                     foreach (var child in GetChildren())
                     {
