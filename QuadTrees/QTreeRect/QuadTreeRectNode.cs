@@ -66,5 +66,9 @@ namespace QuadTrees.QTreeRect
         {
             return search.Intersects(rect);
         }
+        protected override PointF GetMortonPoint(T p)
+        {
+            return p.Rect.Location;//todo: center?
+        }
     }
 }

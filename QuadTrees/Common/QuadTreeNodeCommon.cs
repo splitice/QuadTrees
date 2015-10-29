@@ -13,6 +13,7 @@ namespace QuadTrees.Common
 
         // How many objects can exist in a QuadTree before it sub divides itself
         public const int MaxObjectsPerNode = 10;//scales up to about 16 on removal
+        public const int MaxOptimizeDeletionReAdd = 22;
 
         #endregion
 
@@ -174,7 +175,7 @@ namespace QuadTrees.Common
         /// Remove an item from the object list.
         /// </summary>
         /// <param name="item">The object to remove.</param>
-        private void Remove(QuadTreeObject<T, TNode> item)
+        internal void Remove(QuadTreeObject<T, TNode> item)
         {
             if (_objects == null) return;
 
@@ -253,6 +254,10 @@ namespace QuadTrees.Common
 
         public IEnumerable<TNode> GetChildren()
         {
+            if (ChildTl == null)
+            {
+                yield break;
+            }
             yield return ChildTl;
             yield return ChildTr;
             yield return ChildBl;
@@ -330,17 +335,118 @@ namespace QuadTrees.Common
                     ChildBl.IsEmpty &&
                     ChildBr.IsEmpty)
                 {
-                    _childTl = null;
-                    _childTr = null;
-                    _childBl = null;
-                    _childBr = null;
+                    ClearChildren();
+                }
 
-                    if (_parent != null && _objectCount == 0)
+                /* If has an empty child & no more than OptimizeThreshold worth of data - rebuild more optimally */
+                if (GetChildren().Any((a) => a.IsEmpty) && !HasAtleast(MaxOptimizeDeletionReAdd))
+                {
+                    List<T> buffer = new List<T>(MaxOptimizeDeletionReAdd);
+                    foreach (var child in GetChildren())
                     {
-                        CleanUpwards();
+                        child.GetAllObjects(buffer.Add);
                     }
+                    AddBulk(buffer);
                 }
             }
+        }
+
+        private UInt32 EncodeMorton2(UInt32 x, UInt32 y)
+        {
+            return (Part1By1(y) << 1) + Part1By1(x);
+        }
+
+        private UInt32 Part1By1(UInt32 x)
+        {
+            x &= 0x0000ffff;                  // x = ---- ---- ---- ---- fedc ba98 7654 3210
+            x = (x ^ (x << 8)) & 0x00ff00ff; // x = ---- ---- fedc ba98 ---- ---- 7654 3210
+            x = (x ^ (x << 4)) & 0x0f0f0f0f; // x = ---- fedc ---- ba98 ---- 7654 ---- 3210
+            x = (x ^ (x << 2)) & 0x33333333; // x = --fe --dc --ba --98 --76 --54 --32 --10
+            x = (x ^ (x << 1)) & 0x55555555; // x = -f-e -d-c -b-a -9-8 -7-6 -5-4 -3-2 -1-0
+            return x;
+        }
+
+        private UInt32 MortonIndex2(PointF pointF, float minX, float minY, float width, float height)
+        {
+            pointF = new PointF(pointF.X - minX, pointF.Y - minY);
+            var pX = (UInt32)(UInt16.MaxValue * pointF.X / width);
+            var pY = (UInt32)(UInt16.MaxValue * pointF.Y / height);
+
+            return EncodeMorton2(pX, pY);
+        }
+
+        protected abstract PointF GetMortonPoint(T p);
+        internal void InsertStore(PointF tl, PointF br, T[] range, int start, int end, Action<QuadTreeObject<T, TNode>> adder)
+        {
+            var count = end - start;
+            float area = (br.X - tl.X) * (br.Y - tl.Y);
+            if (count > 8 && area > 0.01f)
+            {
+                var quater = count / 4;
+                var quater1 = start + quater + (count % 4);
+                var quater2 = quater1 + quater;
+                var quater3 = quater2 + quater;
+                PointF middlePoint = GetMortonPoint(range[quater2]);
+                if (ContainsPoint(middlePoint) && tl.X != middlePoint.X && tl.Y != middlePoint.Y && br.X != middlePoint.X && br.Y != middlePoint.Y)
+                {
+                    Subdivide(middlePoint);
+                }
+                else
+                {
+                    middlePoint = Subdivide();
+                }
+
+                ChildTl.InsertStore(tl, middlePoint, range, start, quater1, adder);
+                ChildTr.InsertStore(new PointF(middlePoint.X, tl.Y), new PointF(br.X, middlePoint.Y), range, quater1, quater2, adder);
+                ChildBl.InsertStore(new PointF(tl.X, middlePoint.Y), new PointF(middlePoint.X, br.Y), range, quater2, quater3, adder);
+                ChildBr.InsertStore(middlePoint, br, range, quater3, end, adder);
+            }
+            else
+            {
+                for (; start < end; start++)
+                {
+                    var t = range[start];
+                    var qto = new QuadTreeObject<T, TNode>(t);
+                    Insert(qto);
+                    adder(qto);
+                }
+            }
+        }
+
+        public void AddBulk(IEnumerable<T> points, Action<QuadTreeObject<T, TNode>> adder = null)
+        {
+            if (ChildTl != null)
+            {
+                throw new InvalidOperationException("Bulk add can only be performed on a QuadTree without children");
+            }
+            float minX = float.MaxValue, maxX = float.MinValue, minY = float.MaxValue, maxY = float.MinValue;
+            foreach (var p in points)
+            {
+                var point = GetMortonPoint(p);
+                if (point.X > maxX)
+                {
+                    maxX = point.X;
+                }
+                if (point.X < minX)
+                {
+                    minX = point.X;
+                }
+                if (point.Y > maxY)
+                {
+                    maxY = point.Y;
+                }
+                if (point.Y < minY)
+                {
+                    minY = point.Y;
+                }
+            }
+            float width = maxX - minX, height = maxY - minY;
+            var range = points.Select((a) => new KeyValuePair<UInt32, T>(MortonIndex2(GetMortonPoint(a), minX, minY, width, height), a)).OrderBy((a) => a.Key).Select((a) => a.Value).ToArray();
+            if (adder == null)
+            {
+                adder = (a) => { };
+            }
+            InsertStore(QuadRect.Location, new PointF(QuadRect.Bottom, QuadRect.Right), range, 0, range.Length, adder);
         }
 
 
@@ -362,6 +468,11 @@ namespace QuadTrees.Common
 
         #region Internal Methods
 
+        private void ClearChildren()
+        {
+            _childTl = _childTr = _childBl = _childBr = null;
+        }
+
         /// <summary>
         /// Clears the QuadTree of all objects, including any objects living in its children.
         /// </summary>
@@ -371,7 +482,7 @@ namespace QuadTrees.Common
             if (ChildTl != null)
             {
                 // Set the children to null
-                _childTl = _childTr = _childBl = _childBr = null;
+                ClearChildren();
             }
 
             // Clear any objects at this level
@@ -384,6 +495,24 @@ namespace QuadTrees.Common
             {
                 Debug.Assert(_objectCount == 0);
             }
+        }
+
+        private void _HasAtLeast(ref int objects)
+        {
+            objects -= _objectCount;
+            if (objects > 0)
+            {
+                foreach (var child in GetChildren())
+                {
+                    child._HasAtLeast(ref objects);
+                }
+            }
+        }
+
+        public bool HasAtleast(int objects)
+        {
+            _HasAtLeast(ref objects);
+            return objects <= 0;
         }
 
 

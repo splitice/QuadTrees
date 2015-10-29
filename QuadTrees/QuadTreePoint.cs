@@ -33,10 +33,5 @@ namespace QuadTrees
         {
             return new QuadTreePointNode<T>(rect);
         }
-
-        protected override PointF GetMortonPoint(T p)
-        {
-            return p.Point;
-        }
     }
 }

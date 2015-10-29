@@ -11,7 +11,7 @@ namespace QuadTrees.Common
     {
         #region Private Members
 
-        protected readonly Dictionary<TObject, QuadTreeObject<TObject, TNode>> WrappedDictionary = new Dictionary<TObject, QuadTreeObject<TObject, TNode>>();
+        internal readonly Dictionary<TObject, QuadTreeObject<TObject, TNode>> WrappedDictionary = new Dictionary<TObject, QuadTreeObject<TObject, TNode>>();
 
         // Alternate method, use Parallel arrays
 
@@ -246,8 +246,9 @@ namespace QuadTrees.Common
             QuadTreeObject<TObject, TNode> obj;
             if (WrappedDictionary.TryGetValue(item, out obj))
             {
-                QuadTreePointRoot.Delete(obj, true);
+                obj.Owner.Remove(obj);
                 WrappedDictionary.Remove(item);
+                obj.Owner.CleanUpwards();
                 return true;
             }
             return false;
@@ -263,7 +264,7 @@ namespace QuadTrees.Common
             var set = new HashSet<QuadTreeObject<TObject,TNode>>();
             foreach(var kv in WrappedDictionary){
                 if (!whereExpr(kv.Key)) continue;
-                QuadTreePointRoot.Delete(kv.Value, false);
+                kv.Value.Owner.Remove(kv.Value);
                 set.Add(kv.Value);
             }
             foreach (var s in set)
@@ -320,100 +321,9 @@ namespace QuadTrees.Common
             }
         }
 
-
-        private UInt32 EncodeMorton2(UInt32 x, UInt32 y)
+        public void AddBulk(IEnumerable<TObject> points)
         {
-            return (Part1By1(y) << 1) + Part1By1(x);
-        }
-
-        private UInt32 Part1By1(UInt32 x)
-        {
-            x &= 0x0000ffff;                  // x = ---- ---- ---- ---- fedc ba98 7654 3210
-            x = (x ^ (x << 8)) & 0x00ff00ff; // x = ---- ---- fedc ba98 ---- ---- 7654 3210
-            x = (x ^ (x << 4)) & 0x0f0f0f0f; // x = ---- fedc ---- ba98 ---- 7654 ---- 3210
-            x = (x ^ (x << 2)) & 0x33333333; // x = --fe --dc --ba --98 --76 --54 --32 --10
-            x = (x ^ (x << 1)) & 0x55555555; // x = -f-e -d-c -b-a -9-8 -7-6 -5-4 -3-2 -1-0
-            return x;
-        }
-
-        private UInt32 MortonIndex2(PointF pointF, float minX, float minY, float width, float height)
-        {
-            pointF = new PointF(pointF.X - minX, pointF.Y - minY);
-            var pX = (UInt32)(UInt16.MaxValue * pointF.X / width);
-            var pY = (UInt32)(UInt16.MaxValue * pointF.Y / height);
-
-            return EncodeMorton2(pX, pY);
-        }
-
-        protected abstract PointF GetMortonPoint(TObject p);
-
-        public void AddBulk(TObject[] points)
-        {
-            if (QuadTreePointRoot.ChildTl != null)
-            {
-                throw new InvalidOperationException("Bulk add can only be performed on an empty QuadTree");
-            }
-            float minX = float.MaxValue, maxX = float.MinValue, minY = float.MaxValue, maxY = float.MinValue;
-            foreach (var p in points)
-            {
-                var point = GetMortonPoint(p);
-                if (point.X > maxX)
-                {
-                    maxX = point.X;
-                }
-                if (point.X < minX)
-                {
-                    minX = point.X;
-                }
-                if (point.Y > maxY)
-                {
-                    maxY = point.Y;
-                }
-                if (point.Y < minY)
-                {
-                    minY = point.Y;
-                }
-            }
-            float width = maxX - minX, height = maxY - minY;
-            var range = points.Select((a) => new KeyValuePair<UInt32, TObject>(MortonIndex2(GetMortonPoint(a), minX, minY, width, height), a)).OrderBy((a) => a.Key).Select((a)=>a.Value).ToArray();
-            InsertStore(QuadTreePointRoot, QuadRect.Location, new PointF(QuadRect.Bottom, QuadTreePointRoot.QuadRect.Right), range, 0, range.Length);
-        }
-
-        private void InsertStore(TNode node, PointF tl, PointF br, TObject[] range, int start, int end)
-        {
-            var count = end - start;
-            float area = (br.X - tl.X)*(br.Y - tl.Y);
-            if (count > 8 && area > 0.01f)
-            {
-                var quater = count / 4;
-                var quater1 = start + quater + (count % 4);
-                var quater2 = quater1 + quater;
-                var quater3 = quater2 + quater;
-                PointF middlePoint = GetMortonPoint(range[quater2]);
-                if (node.ContainsPoint(middlePoint) && tl.X != middlePoint.X && tl.Y != middlePoint.Y && br.X != middlePoint.X && br.Y != middlePoint.Y)
-                {
-                    node.Subdivide(middlePoint);
-                }
-                else
-                {
-                    middlePoint = node.Subdivide();
-                }
-
-                InsertStore(node.ChildTl, tl, middlePoint, range, start, quater1);
-                InsertStore(node.ChildTr, new PointF(middlePoint.X, tl.Y), new PointF(br.X, middlePoint.Y), range, quater1, quater2);
-                InsertStore(node.ChildBl, new PointF(tl.X, middlePoint.Y), new PointF(middlePoint.X, br.Y), range, quater2, quater3);
-                InsertStore(node.ChildBr, middlePoint, br, range, quater3, end);
-            }
-            else
-            {
-                for (; start < end; start++)
-                {
-                    var t = range[start];
-                    var qto = new QuadTreeObject<TObject, TNode>(t);
-                    node.Insert(qto);
-                    WrappedDictionary.Add(t, qto);
-                }
-            }
+            QuadTreePointRoot.AddBulk(points, (a)=>WrappedDictionary.Add(a.Data,a));
         }
     }
 }

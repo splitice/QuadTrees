@@ -26,10 +26,5 @@ namespace QuadTrees
         {
             return new QuadTreeRectPointInvNode<T>(rect);
         }
-
-        protected override PointF GetMortonPoint(T p)
-        {
-            return p.Rect.Location;//todo: center?
-        }
     }
 }
