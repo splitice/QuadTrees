@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Drawing;
 using QuadTrees.Common;
+using QuadTrees.QTreeRect;
 
 namespace QuadTrees.QTreePoint
 {
@@ -34,6 +35,11 @@ namespace QuadTrees.QTreePoint
         protected override bool CheckContains(RectangleF rectangleF, T data)
         {
             return rectangleF.Contains(data.Point);
+        }
+
+        public override bool ContainsObject(QuadTreeObject<T, QuadTreePointNode<T>> qto)
+        {
+            return CheckContains(QuadRect, qto.Data);
         }
 
         protected override bool CheckIntersects(RectangleF searchRect, T data)

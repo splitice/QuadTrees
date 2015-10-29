@@ -51,6 +51,12 @@ namespace QuadTrees.QTreeRect
         {
             return searchRect.Intersects(data.Rect);
         }
+
+        public override bool ContainsObject(QuadTreeObject<T, QuadTreeRectNode<T, RectangleF>> qto)
+        {
+            return CheckContains(QuadRect, qto.Data);
+        }
+
         protected override bool QueryContains(RectangleF search, RectangleF rect)
         {
             return search.Contains(rect);

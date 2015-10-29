@@ -336,11 +336,11 @@ namespace QuadTrees.Common
             return x;
         }
 
-        private UInt32 MortonIndex2(PointF pointF, float minX, float minY, float maxX, float maxY)
+        private UInt32 MortonIndex2(PointF pointF, float minX, float minY, float width, float height)
         {
             pointF = new PointF(pointF.X - minX, pointF.Y - minY);
-            var pX = (UInt32)(UInt16.MaxValue * pointF.X / (maxX - minX));
-            var pY = (UInt32)(UInt16.MaxValue * pointF.Y / (maxY - minY));
+            var pX = (UInt32)(UInt16.MaxValue * pointF.X / width);
+            var pY = (UInt32)(UInt16.MaxValue * pointF.Y / height);
 
             return EncodeMorton2(pX, pY);
         }
@@ -374,32 +374,36 @@ namespace QuadTrees.Common
                     minY = point.Y;
                 }
             }
-            var range = points.Select((a) => new KeyValuePair<UInt32, TObject>(MortonIndex2(GetMortonPoint(a), minX, minY, maxX, maxY), a)).OrderBy((a) => a.Key).ToArray();
-            InsertStore(QuadTreePointRoot, range, 0, range.Length);
+            float width = maxX - minX, height = maxY - minY;
+            var range = points.Select((a) => new KeyValuePair<UInt32, TObject>(MortonIndex2(GetMortonPoint(a), minX, minY, width, height), a)).OrderBy((a) => a.Key).ToArray();
+            InsertStore(QuadTreePointRoot, QuadRect.Location, new PointF(QuadRect.Bottom, QuadTreePointRoot.QuadRect.Right), range, 0, range.Length);
         }
 
-        private void InsertStore(TNode node, KeyValuePair<uint, TObject>[] range, int start, int end)
+        private void InsertStore(TNode node, PointF tl, PointF br, KeyValuePair<uint, TObject>[] range, int start, int end)
         {
             var count = end - start;
-            if (count > 8 && node.QuadRect.Width > 0.01 && node.QuadRect.Height > 0.01)
+            float area = (br.X - tl.X)*(br.Y - tl.Y);
+            if (count > 8 && area > 0.01f)
             {
                 var quater = count / 4;
                 var quater1 = start + quater + (count % 4);
                 var quater2 = quater1 + quater;
                 var quater3 = quater2 + quater;
                 PointF middlePoint = GetMortonPoint(range[quater2].Value);
-                if (node.Contains(middlePoint) && node.QuadRect.Right != middlePoint.X && node.QuadRect.Bottom != middlePoint.Y && node.QuadRect.Left != middlePoint.X && node.QuadRect.Top != middlePoint.Y)
+                float area1, area2, area3, area4;
+                if (node.ContainsPoint(middlePoint) && tl.X != middlePoint.X && tl.Y != middlePoint.Y && br.X != middlePoint.X && br.Y != middlePoint.Y)
                 {
                     node.Subdivide(middlePoint);
                 }
                 else
                 {
-                    node.Subdivide();
+                    middlePoint = node.Subdivide();
                 }
-                InsertStore(node.ChildTl, range, start, quater1);
-                InsertStore(node.ChildTr, range, quater1, quater2);
-                InsertStore(node.ChildBl, range, quater2, quater3);
-                InsertStore(node.ChildBr, range, quater3, end);
+
+                InsertStore(node.ChildTl, tl, middlePoint, range, start, quater1);
+                InsertStore(node.ChildTr, new PointF(middlePoint.X, tl.Y), new PointF(br.X, middlePoint.Y), range, quater1, quater2);
+                InsertStore(node.ChildBl, new PointF(tl.X, middlePoint.Y), new PointF(middlePoint.X, br.Y), range, quater2, quater3);
+                InsertStore(node.ChildBr, middlePoint, br, range, quater3, end);
             }
             else
             {

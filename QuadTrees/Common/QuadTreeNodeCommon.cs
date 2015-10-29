@@ -37,7 +37,7 @@ namespace QuadTrees.Common
         /// <summary>
         /// The area this QuadTree represents.
         /// </summary>
-        public RectangleF QuadRect
+        internal virtual RectangleF QuadRect
         {
             get { return Rect; }
         }
@@ -191,12 +191,14 @@ namespace QuadTrees.Common
             }
         }
 
-        internal void Subdivide()
+        internal PointF Subdivide()
         {
             // We've reached capacity, subdivide...
             PointF mid = new PointF(Rect.X + (Rect.Width / 2), Rect.Y + (Rect.Height / 2));
 
             Subdivide(mid);
+
+            return mid;
         }
 
 
@@ -258,19 +260,19 @@ namespace QuadTrees.Common
         /// <returns></returns>
         private TNode GetDestinationTree(QuadTreeObject<T, TNode> item)
         {
-            if (CheckContains(ChildTl.QuadRect, item.Data))
+            if (ChildTl.ContainsObject(item))
             {
                 return ChildTl;
             }
-            if (CheckContains(ChildTr.QuadRect, item.Data))
+            if (ChildTr.ContainsObject(item))
             {
                 return ChildTr;
             }
-            if (CheckContains(ChildBl.QuadRect, item.Data))
+            if (ChildBl.ContainsObject(item))
             {
                 return ChildBl;
             }
-            if (CheckContains(ChildBr.QuadRect, item.Data))
+            if (ChildBr.ContainsObject(item))
             {
                 return ChildBr;
             }
@@ -284,7 +286,7 @@ namespace QuadTrees.Common
         private void Relocate(QuadTreeObject<T, TNode> item)
         {
             // Are we still inside our parent?
-            if (CheckContains(QuadRect, item.Data))
+            if (ContainsObject(item))
             {
                 // Good, have we moved inside any of our children?
                 if (ChildTl != null)
@@ -346,10 +348,12 @@ namespace QuadTrees.Common
         }
 
         #endregion
-        public bool Contains(PointF point)
+        public bool ContainsPoint(PointF point)
         {
             return Rect.Contains(point);
         }
+
+        public abstract bool ContainsObject(QuadTreeObject<T, TNode> qto);
 
         #region Internal Methods
 

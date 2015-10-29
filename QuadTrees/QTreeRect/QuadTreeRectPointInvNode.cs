@@ -1,4 +1,6 @@
 using System.Drawing;
+using QuadTrees.Common;
+using QuadTrees.QTreePoint;
 
 namespace QuadTrees.QTreeRect
 {
@@ -27,6 +29,12 @@ namespace QuadTrees.QTreeRect
         {
             return data.Rect.Contains(searchRect);
         }
+
+        public override bool ContainsObject(QuadTreeObject<T, QuadTreeRectNode<T, PointF>> qto)
+        {
+            return CheckContains(QuadRect, qto.Data);
+        }
+
         protected override bool QueryContains(PointF search, RectangleF rect)
         {
             return false;
