@@ -110,6 +110,11 @@ namespace QuadTrees.Common
             get { return _childBr; }
         }
 
+        public TNode Parent
+        {
+            get { return _parent; }
+        }
+
         #endregion
 
         #region Constructor
@@ -318,9 +323,9 @@ namespace QuadTrees.Common
             else
             {
                 // We don't fit here anymore, move up, if we can
-                if (_parent != null)
+                if (Parent != null)
                 {
-                    _parent.Relocate(item);
+                    Parent.Relocate(item);
                 }
             }
         }
@@ -350,12 +355,12 @@ namespace QuadTrees.Common
                 else if (emptyChildren != 0 && !HasAtleast(MaxOptimizeDeletionReAdd))
                 {
                     /* If has an empty child & no more than OptimizeThreshold worth of data - rebuild more optimally */
-                    List<T> buffer = new List<T>(MaxOptimizeDeletionReAdd);
+                    Dictionary<T,QuadTreeObject<T,TNode>> buffer = new Dictionary<T,QuadTreeObject<T,TNode>>();
                     foreach (var child in GetChildren())
                     {
-                        child.GetAllObjects(buffer.Add);
+                        child.GetAllObjects((a)=>buffer.Add(a.Data,a));
                     }
-                    AddBulk(buffer);
+                    AddBulk(buffer.Keys,(a)=>buffer[a]);
                 }
             }
         }
@@ -385,7 +390,7 @@ namespace QuadTrees.Common
         }
 
         protected abstract PointF GetMortonPoint(T p);
-        internal void InsertStore(PointF tl, PointF br, T[] range, int start, int end, Action<QuadTreeObject<T, TNode>> adder)
+        internal void InsertStore(PointF tl, PointF br, T[] range, int start, int end, Func<T,QuadTreeObject<T, TNode>> createObject)
         {
             var count = end - start;
             float area = (br.X - tl.X) * (br.Y - tl.Y);
@@ -405,24 +410,23 @@ namespace QuadTrees.Common
                     middlePoint = Subdivide();
                 }
 
-                ChildTl.InsertStore(tl, middlePoint, range, start, quater1, adder);
-                ChildTr.InsertStore(new PointF(middlePoint.X, tl.Y), new PointF(br.X, middlePoint.Y), range, quater1, quater2, adder);
-                ChildBl.InsertStore(new PointF(tl.X, middlePoint.Y), new PointF(middlePoint.X, br.Y), range, quater2, quater3, adder);
-                ChildBr.InsertStore(middlePoint, br, range, quater3, end, adder);
+                ChildTl.InsertStore(tl, middlePoint, range, start, quater1, createObject);
+                ChildTr.InsertStore(new PointF(middlePoint.X, tl.Y), new PointF(br.X, middlePoint.Y), range, quater1, quater2, createObject);
+                ChildBl.InsertStore(new PointF(tl.X, middlePoint.Y), new PointF(middlePoint.X, br.Y), range, quater2, quater3, createObject);
+                ChildBr.InsertStore(middlePoint, br, range, quater3, end, createObject);
             }
             else
             {
                 for (; start < end; start++)
                 {
                     var t = range[start];
-                    var qto = new QuadTreeObject<T, TNode>(t);
+                    var qto = createObject(t);
                     Insert(qto);
-                    adder(qto);
                 }
             }
         }
 
-        public void AddBulk(IEnumerable<T> points, Action<QuadTreeObject<T, TNode>> adder = null)
+        public void AddBulk(IEnumerable<T> points, Func<T,QuadTreeObject<T, TNode>> createObject = null)
         {
             if (ChildTl != null)
             {
@@ -451,19 +455,19 @@ namespace QuadTrees.Common
             }
             float width = maxX - minX, height = maxY - minY;
             var range = points.Select((a) => new KeyValuePair<UInt32, T>(MortonIndex2(GetMortonPoint(a), minX, minY, width, height), a)).OrderBy((a) => a.Key).Select((a) => a.Value).ToArray();
-            if (adder == null)
+            if (createObject == null)
             {
-                adder = (a) => { };
+                createObject = (a) => new QuadTreeObject<T, TNode>(a);
             }
-            InsertStore(QuadRect.Location, new PointF(QuadRect.Bottom, QuadRect.Right), range, 0, range.Length, adder);
+            InsertStore(QuadRect.Location, new PointF(QuadRect.Bottom, QuadRect.Right), range, 0, range.Length, createObject);
         }
-
 
         internal void CleanUpwards()
         {
-            if (_parent != null && _objectCount == 0)
+            CleanThis();
+            if (Parent != null && IsEmpty)
             {
-                _parent.CleanThis();
+                CleanUpwards();
             }
         }
 
@@ -560,12 +564,12 @@ namespace QuadTrees.Common
             // If this quad doesn't contain the items rectangle, do nothing, unless we are the root
             if (!CheckContains(Rect, item.Data))
             {
-                Debug.Assert(_parent != null,
+                Debug.Assert(Parent != null,
                     "We are not the root, and this object doesn't fit here. How did we get here?");
-                if (_parent != null)
+                if (Parent != null)
                 {
                     // This object is outside of the QuadTree bounds, we should add it at the root level
-                    _parent.Insert(item);
+                    Parent.Insert(item);
                 }
                 return;
             }
@@ -743,6 +747,11 @@ namespace QuadTrees.Common
         /// <param name="put">A reference to a list in which to store the objects.</param>
         public void GetAllObjects(Action<T> put)
         {
+            GetAllObjects((a) => put(a.Data));
+        }
+
+        public void GetAllObjects(Action<QuadTreeObject<T,TNode>> put)
+        {
             // If this Quad has objects, add them
             if (_objects != null)
             {
@@ -751,7 +760,7 @@ namespace QuadTrees.Common
 
                 for (int i = 0; i < _objectCount; i++)
                 {
-                    put(_objects[i].Data);
+                    put(_objects[i]);
                 }
             }
             else

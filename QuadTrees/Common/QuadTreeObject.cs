@@ -5,7 +5,7 @@ namespace QuadTrees.Common
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <typeparam name="TPointNode"></typeparam>
-    public class QuadTreeObject<T, TPointNode> where TPointNode: class 
+    public class QuadTreeObject<T, TPointNode> where TPointNode: class
     {
         private TPointNode _owner;
         private T _data;

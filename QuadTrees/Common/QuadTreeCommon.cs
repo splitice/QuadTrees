@@ -264,13 +264,23 @@ namespace QuadTrees.Common
             var set = new HashSet<QuadTreeObject<TObject,TNode>>();
             foreach(var kv in WrappedDictionary){
                 if (!whereExpr(kv.Key)) continue;
-                kv.Value.Owner.Remove(kv.Value);
                 set.Add(kv.Value);
             }
+            var parents = new HashSet<TNode>();
             foreach (var s in set)
             {
-                s.Owner.CleanUpwards();
+                var owner = s.Owner;
+                if (owner.Parent != null)
+                {
+                    parents.Add(owner.Parent);
+                }
+                owner.Remove(s);
+                owner.CleanThis();
                 WrappedDictionary.Remove(s.Data);
+            }
+            foreach (var p in parents)
+            {
+                p.CleanUpwards();
             }
             return set.Count != 0;
         }
@@ -323,7 +333,12 @@ namespace QuadTrees.Common
 
         public void AddBulk(IEnumerable<TObject> points)
         {
-            QuadTreePointRoot.AddBulk(points, (a)=>WrappedDictionary.Add(a.Data,a));
+            QuadTreePointRoot.AddBulk(points, (a) =>
+            {
+                var qto = new QuadTreeObject<TObject, TNode>(a);
+                WrappedDictionary.Add(a, qto);
+                return qto;
+            });
         }
     }
 }
