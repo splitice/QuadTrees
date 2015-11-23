@@ -130,8 +130,11 @@ namespace QuadTrees.Common
             if (WrappedDictionary.TryGetValue(item, out obj))
             {
                 obj.Owner.Relocate(obj);
+
+                Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
                 return true;
             }
+            Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
             return false;
         }
 
@@ -152,6 +155,7 @@ namespace QuadTrees.Common
             {
                 throw new ArgumentException("Object already exists in index");
             }
+            Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
             WrappedDictionary.Add(item, wrappedObject);
             QuadTreePointRoot.Insert(wrappedObject);
             //Debug.Assert(WrappedDictionary.Values.Distinct().Count() == WrappedDictionary.Count);
@@ -250,8 +254,10 @@ namespace QuadTrees.Common
                 obj.Owner.Remove(obj);
                 WrappedDictionary.Remove(item);
                 obj.Owner.CleanUpwards();
+                Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
                 return true;
             }
+            Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
             return false;
         }
 
@@ -262,6 +268,7 @@ namespace QuadTrees.Common
         /// <returns></returns>
         public bool RemoveAll(Func<TObject,bool> whereExpr)
         {
+            Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
             var set = new HashSet<QuadTreeObject<TObject,TNode>>();
             foreach(var kv in WrappedDictionary){
                 if (!whereExpr(kv.Key)) continue;
@@ -275,14 +282,18 @@ namespace QuadTrees.Common
                 {
                     parents.Add(owner.Parent);
                 }
-                owner.Remove(s);
-                owner.CleanThis();
-                WrappedDictionary.Remove(s.Data);
+                bool qtRemoved = owner.Remove(s);
+                Debug.Assert(qtRemoved);
+                bool dictRemoved = WrappedDictionary.Remove(s.Data);
+                Debug.Assert(dictRemoved);
             }
+            Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
             foreach (var p in parents)
             {
                 p.CleanUpwards();
             }
+
+            Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
             return set.Count != 0;
         }
 
@@ -322,24 +333,29 @@ namespace QuadTrees.Common
         /// <summary>
         /// Add a range of objects to the Quad Tree
         /// </summary>
-        /// <param name="allPointsDbscan"></param>
-        public void AddRange(IEnumerable<TObject> allPointsDbscan)
+        /// <param name="points"></param>
+        public void AddRange(IEnumerable<TObject> points)
         {
             //TODO: more optimially?
-            foreach (var ap in allPointsDbscan)
+            int origCount = WrappedDictionary.Count;
+            foreach (var ap in points)
             {
                 Add(ap);
             }
+            Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
+            Debug.Assert(WrappedDictionary.Count == origCount + points.Count());
         }
 
         public void AddBulk(IEnumerable<TObject> points)
         {
-            QuadTreePointRoot.AddBulk(points, (a) =>
+            QuadTreePointRoot.AddBulk(points.ToArray(), (a) =>
             {
                 var qto = new QuadTreeObject<TObject, TNode>(a);
                 WrappedDictionary.Add(a, qto);
                 return qto;
             });
+            Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
+            Debug.Assert(WrappedDictionary.Count == points.Count());
         }
     }
 }

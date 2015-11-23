@@ -146,5 +146,20 @@ namespace QuadTrees.Tests
             Assert.AreEqual(result.Distinct().Count(), result.Count);
             Assert.AreEqual(10000, result.Count);
         }
+
+        [TestCase]
+        public void TestAddSameIndividual()
+        {
+            QuadTreeRect<QTreeObject> qtree = new QuadTreeRect<QTreeObject>();
+            List<QTreeObject> list = new List<QTreeObject>();
+            for (int i = 0; i < 10000; i++)
+            {
+                qtree.Add(new QTreeObject(new RectangleF(1, 1, 1, 1)));
+            }
+
+            var result = qtree.GetObjects(new RectangleF(-100, -100, 200, 200));
+            Assert.AreEqual(result.Distinct().Count(), result.Count);
+            Assert.AreEqual(10000, result.Count);
+        }
     }
 }
