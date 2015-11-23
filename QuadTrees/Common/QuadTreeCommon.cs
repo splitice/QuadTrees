@@ -286,6 +286,7 @@ namespace QuadTrees.Common
                 Debug.Assert(qtRemoved);
                 bool dictRemoved = WrappedDictionary.Remove(s.Data);
                 Debug.Assert(dictRemoved);
+                Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
             }
             Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
             foreach (var p in parents)

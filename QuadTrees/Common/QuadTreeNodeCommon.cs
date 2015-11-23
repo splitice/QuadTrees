@@ -24,7 +24,7 @@ namespace QuadTrees.Common
 
         protected RectangleF Rect; // The area this QuadTree represents
 
-        private readonly TNode _parent = null; // The parent of this quad
+        private TNode _parent = null; // The parent of this quad
 
         private TNode _childTl = null; // Top Left Child
         private TNode _childTr = null; // Top Right Child
@@ -113,6 +113,7 @@ namespace QuadTrees.Common
         public TNode Parent
         {
             get { return _parent; }
+            internal set { _parent = value; }
         }
 
         #endregion
@@ -199,7 +200,6 @@ namespace QuadTrees.Common
             }
 
             Debug.Assert(_objectCount >= 0);
-
             return true;
         }
 
@@ -353,6 +353,10 @@ namespace QuadTrees.Common
                     _childTr = child._childTr;
                     _childBl = child._childBl;
                     _childBr = child._childBr;
+                    foreach (var c in GetChildren())
+                    {
+                        c.Parent = this as TNode;
+                    }
                     if (_objectCount == 0)
                     {
                         _objects = child._objects;
@@ -672,7 +676,7 @@ namespace QuadTrees.Common
                     {
                         if (node._objects != null)
                         {
-                            for (int i = 0; i < _objectCount; i++)
+                            for (int i = 0; i < node._objectCount; i++)
                             {
                                 var y = node._objects[i];
                                 yield return y.Data;
