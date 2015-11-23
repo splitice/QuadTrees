@@ -399,12 +399,18 @@ namespace QuadTrees.Common
         {
             var count = end - start;
             float area = (br.X - tl.X) * (br.Y - tl.Y);
-            if (count > 8 && area > 0.01f)
+            if (count > 8 && area > 0.01f && !float.IsInfinity(area))
             {
+                //If we have more than 8 points and an area of 0.01 then we will subdivide
+
+                //Calculate the offsets in the array for each quater
                 var quater = count / 4;
                 var quater1 = start + quater + (count % 4);
                 var quater2 = quater1 + quater;
                 var quater3 = quater2 + quater;
+                Debug.Assert(quater3 + quater - start == count);
+
+                //The middlepoint is at the half way mark (2 quaters)
                 PointF middlePoint = GetMortonPoint(range[quater2]);
                 if (ContainsPoint(middlePoint) && tl.X != middlePoint.X && tl.Y != middlePoint.Y && br.X != middlePoint.X && br.Y != middlePoint.Y)
                 {
@@ -437,6 +443,8 @@ namespace QuadTrees.Common
             {
                 throw new InvalidOperationException("Bulk add can only be performed on a QuadTree without children");
             }
+
+            //Find the max / min morton points
             float minX = float.MaxValue, maxX = float.MinValue, minY = float.MaxValue, maxY = float.MinValue;
             foreach (var p in points)
             {
@@ -458,8 +466,13 @@ namespace QuadTrees.Common
                     minY = point.Y;
                 }
             }
+            //Calculate the width and height of the morton space
             float width = maxX - minX, height = maxY - minY;
+
+            //Return points sorted by motron point
             var range = points.Select((a) => new KeyValuePair<UInt32, T>(MortonIndex2(GetMortonPoint(a), minX, minY, width, height), a)).OrderBy((a) => a.Key).Select((a) => a.Value).ToArray();
+            Debug.Assert(range.Length == points.Count());
+            
             if (createObject == null)
             {
                 createObject = (a) => new QuadTreeObject<T, TNode>(a);
