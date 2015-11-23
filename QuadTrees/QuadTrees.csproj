@@ -54,6 +54,8 @@
     <Compile Include="QuadTreePoint.cs" />
     <Compile Include="QuadTreeRect.cs" />
     <Compile Include="QuadTreeRectPointInverse.cs" />
+    <Compile Include="Wrappers\QuadTreePointWrapper.cs" />
+    <Compile Include="Wrappers\QuadTreeRectWrapper.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
