@@ -173,6 +173,7 @@ namespace QuadTrees.Common
 
             item.Owner = this as TNode;
             _objects[_objectCount ++] = item;
+            Debug.Assert(_objects[_objectCount -1] != null);
         }
 
 
@@ -195,8 +196,7 @@ namespace QuadTrees.Common
             else
             {
                 _objects[removeIndex] = _objects[_objectCount - 1];
-                _objects[_objectCount - 1] = null;
-                _objectCount --;
+                _objects[-- _objectCount] = null;
             }
         }
 
@@ -247,6 +247,10 @@ namespace QuadTrees.Common
 
             _objectCount = nodeIdx;
             _objects = nodeIdx == 0 ? null : nodeList;
+            if (_objects != null)
+            {
+                Debug.Assert(_objects[_objectCount - 1] != null);
+            }
         }
 
         protected void VerifyNodeAssertions(RectangleF rectangleF)
@@ -352,7 +356,7 @@ namespace QuadTrees.Common
                     _childBl = child._childBl;
                     _childBr = child._childBr;
                 }
-                else if (emptyChildren != 0 && !HasAtleast(MaxOptimizeDeletionReAdd))
+                else if (false && emptyChildren != 0 && !HasAtleast(MaxOptimizeDeletionReAdd))
                 {
                     /* If has an empty child & no more than OptimizeThreshold worth of data - rebuild more optimally */
                     Dictionary<T,QuadTreeObject<T,TNode>> buffer = new Dictionary<T,QuadTreeObject<T,TNode>>();
@@ -503,10 +507,7 @@ namespace QuadTrees.Common
             if (_objects != null)
             {
                 _objectCount = 0;
-                for (int index = 0; index < _objects.Length; index++)
-                {
-                    _objects[index] = null;
-                }
+                _objects = null;
             }
             else
             {

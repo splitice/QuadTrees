@@ -154,6 +154,7 @@ namespace QuadTrees.Common
             }
             WrappedDictionary.Add(item, wrappedObject);
             QuadTreePointRoot.Insert(wrappedObject);
+            //Debug.Assert(WrappedDictionary.Values.Distinct().Count() == WrappedDictionary.Count);
             Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
         }
 

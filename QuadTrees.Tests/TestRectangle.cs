@@ -95,5 +95,56 @@ namespace QuadTrees.Tests
             result = qtree.GetObjects(new RectangleF(-.100f, -.100f, .200f, .200f));
             Assert.AreEqual(result.Distinct().Count(), result.Count);
         }
+
+        [TestCase]
+        public void TestBulkAddMany()
+        {
+            Random r = new Random(1000);
+            QuadTreeRect<QTreeObject> qtree = new QuadTreeRect<QTreeObject>();
+            List<QTreeObject> list= new List<QTreeObject>();
+            for (int i = 0; i < 10000; i++)
+            {
+                list.Add(new QTreeObject(new RectangleF(r.Next(0, 1000) / 1000f, r.Next(0, 1000) / 1000f, r.Next(1000, 20000) / 1000f, r.Next(1000, 20000) / 1000f)));
+            }
+            qtree.AddBulk(list);
+
+            var result = qtree.GetObjects(new RectangleF(-100, -100, 200, 200));
+            Assert.AreEqual(result.Distinct().Count(), result.Count);
+
+            result = qtree.GetObjects(new RectangleF(-.100f, -.100f, .200f, .200f));
+            Assert.AreEqual(result.Distinct().Count(), result.Count);
+        }
+
+        [TestCase]
+        public void TestAddManySame()
+        {
+            QuadTreeRect<QTreeObject> qtree = new QuadTreeRect<QTreeObject>();
+            List<QTreeObject> list = new List<QTreeObject>();
+            for (int i = 0; i < 10000; i++)
+            {
+                list.Add(new QTreeObject(new RectangleF(1, 1, 1, 1)));
+            }
+            qtree.AddRange(list);
+
+            var result = qtree.GetObjects(new RectangleF(-100, -100, 200, 200));
+            Assert.AreEqual(result.Distinct().Count(), result.Count);
+            Assert.AreEqual(10000, result.Count);
+        }
+
+        [TestCase]
+        public void TestBulkAddManySame()
+        {
+            QuadTreeRect<QTreeObject> qtree = new QuadTreeRect<QTreeObject>();
+            List<QTreeObject> list = new List<QTreeObject>();
+            for (int i = 0; i < 10000; i++)
+            {
+                list.Add(new QTreeObject(new RectangleF(1,1,1,1)));
+            }
+            qtree.AddBulk(list);
+
+            var result = qtree.GetObjects(new RectangleF(-100, -100, 200, 200));
+            Assert.AreEqual(result.Distinct().Count(), result.Count);
+            Assert.AreEqual(10000, result.Count);
+        }
     }
 }
