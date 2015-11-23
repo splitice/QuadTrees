@@ -195,6 +195,9 @@ namespace QuadTrees.Common
             }
             else
             {
+#if DEBUG
+                item.Owner = null;
+#endif
                 _objects[removeIndex] = _objects[-- _objectCount];
                 _objects[_objectCount] = null;
             }
@@ -228,6 +231,7 @@ namespace QuadTrees.Common
         /// </summary>
         public void Subdivide(PointF mid)
         {
+            Debug.Assert(_childTl == null);
             // We've reached capacity, subdivide...
             _childTl = CreateNode(new RectangleF(Rect.Left, Rect.Top, mid.X - Rect.Left, mid.Y - Rect.Top));
             _childTr = CreateNode(new RectangleF(mid.X, Rect.Top, Rect.Right - mid.X, mid.Y - Rect.Top));
@@ -237,12 +241,12 @@ namespace QuadTrees.Common
 
             if (_objectCount != 0)
             {
-                var nodeList = _objects.Take(_objectCount).ToArray();
-                Array.Clear(_objects, 0, _objectCount);
+                var nodeList = _objects.Take(_objectCount);
+                _objects = null;
                 _objectCount = 0;
                 foreach (var a in nodeList)//todo: bulk insert optimization
                 {
-                    Add(a);
+                    Insert(a);
                 }
                 Debug.Assert(Count == nodeList.Count());
             }
@@ -381,6 +385,7 @@ namespace QuadTrees.Common
                     if (child._objects != null)
                     {
                         Debug.Assert(child._objects.Take(child._objectCount).All(a => a.Owner != child));
+                        Debug.Assert(_objects.Take(_objectCount).All((a) => a.Owner == this));
                     }
                 }
                 else if (false && emptyChildren != 0 && !HasAtleast(MaxOptimizeDeletionReAdd))
@@ -467,7 +472,7 @@ namespace QuadTrees.Common
             }
         }
 
-        public void AddBulk(T[] points, Func<T,QuadTreeObject<T, TNode>> createObject = null)
+        public void AddBulk(T[] points, Func<T,QuadTreeObject<T, TNode>> createObject)
         {
             if (ChildTl != null)
             {
@@ -503,10 +508,6 @@ namespace QuadTrees.Common
             var range = points.Select((a) => new KeyValuePair<UInt32, T>(MortonIndex2(GetMortonPoint(a), minX, minY, width, height), a)).OrderBy((a) => a.Key).Select((a) => a.Value).ToArray();
             Debug.Assert(range.Length == points.Count());
             
-            if (createObject == null)
-            {
-                createObject = (a) => new QuadTreeObject<T, TNode>(a);
-            }
             InsertStore(QuadRect.Location, new PointF(QuadRect.Bottom, QuadRect.Right), range, 0, range.Length, createObject);
         }
 
