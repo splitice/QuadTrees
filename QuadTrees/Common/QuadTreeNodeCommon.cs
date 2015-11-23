@@ -360,6 +360,7 @@ namespace QuadTrees.Common
                     {
                         child.GetAllObjects((a)=>buffer.Add(a.Data,a));
                     }
+                    Clear();
                     AddBulk(buffer.Keys,(a)=>buffer[a]);
                 }
             }
