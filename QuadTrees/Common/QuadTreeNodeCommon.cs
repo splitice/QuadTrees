@@ -382,6 +382,7 @@ namespace QuadTrees.Common
                         }
                         Debug.Assert(origCount + child._objectCount == Count);
                     }
+                    child.Clear();
                     if (child._objects != null)
                     {
                         Debug.Assert(child._objects.Take(child._objectCount).All(a => a.Owner != child));
@@ -532,7 +533,6 @@ namespace QuadTrees.Common
 
         private void ClearChildren()
         {
-            Debug.Assert(GetChildren().All((a)=>a.IsEmpty));
             _childTl = _childTr = _childBl = _childBr = null;
         }
 
