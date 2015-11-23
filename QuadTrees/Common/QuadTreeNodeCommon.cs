@@ -233,6 +233,7 @@ namespace QuadTrees.Common
             _childTr = CreateNode(new RectangleF(mid.X, Rect.Top, Rect.Right - mid.X, mid.Y - Rect.Top));
             _childBl = CreateNode(new RectangleF(Rect.Left, mid.Y, mid.X - Rect.Left, Rect.Bottom - mid.Y));
             _childBr = CreateNode(new RectangleF(mid.X, mid.Y, Rect.Right - mid.X, Rect.Bottom - mid.Y));
+            Debug.Assert(GetChildren().All((a)=>a.Parent == this));
 
             if (_objectCount != 0)
             {
@@ -259,6 +260,7 @@ namespace QuadTrees.Common
         {
             if (ChildTl == null)
             {
+                Debug.Assert(null == ChildBl && null == ChildBr && null == ChildTr);
                 yield break;
             }
             yield return ChildTl;
@@ -357,6 +359,7 @@ namespace QuadTrees.Common
                     {
                         c.Parent = this as TNode;
                     }
+                    //todo: expand these to fill, preserving middle point
                     if (_objectCount == 0)
                     {
                         _objects = child._objects;
@@ -368,10 +371,16 @@ namespace QuadTrees.Common
                     }
                     else
                     {
+                        var origCount = Count;
                         for (int index = 0; index < child._objectCount; index++)
                         {
                             Insert(child._objects[index]);
                         }
+                        Debug.Assert(origCount + child._objectCount == Count);
+                    }
+                    if (child._objects != null)
+                    {
+                        Debug.Assert(child._objects.Take(child._objectCount).All(a => a.Owner != child));
                     }
                 }
                 else if (false && emptyChildren != 0 && !HasAtleast(MaxOptimizeDeletionReAdd))
@@ -522,6 +531,7 @@ namespace QuadTrees.Common
 
         private void ClearChildren()
         {
+            Debug.Assert(GetChildren().All((a)=>a.IsEmpty));
             _childTl = _childTr = _childBl = _childBr = null;
         }
 

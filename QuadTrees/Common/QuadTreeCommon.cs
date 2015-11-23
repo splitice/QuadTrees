@@ -281,6 +281,7 @@ namespace QuadTrees.Common
                 if (owner.Parent != null)
                 {
                     parents.Add(owner.Parent);
+                    Debug.Assert(owner.Parent.GetChildren().Any((a) => a == owner));
                 }
                 bool qtRemoved = owner.Remove(s);
                 Debug.Assert(qtRemoved);
