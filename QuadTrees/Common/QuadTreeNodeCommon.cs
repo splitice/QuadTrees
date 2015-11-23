@@ -503,7 +503,10 @@ namespace QuadTrees.Common
             if (_objects != null)
             {
                 _objectCount = 0;
-                _objects = null;
+                for (int index = 0; index < _objects.Length; index++)
+                {
+                    _objects[index] = null;
+                }
             }
             else
             {
