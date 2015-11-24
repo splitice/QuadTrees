@@ -382,11 +382,12 @@ namespace QuadTrees.Common
                         }
                         Debug.Assert(origCount + child._objectCount == Count);
                     }
-                    child.Clear();
                     if (child._objects != null)
                     {
                         Debug.Assert(child._objects.Take(child._objectCount).All(a => a.Owner != child));
                     }
+                    child.Clear();
+                    Debug.Assert(child.IsEmpty);
                 }
                 else if (emptyChildren != 0 && !HasAtleast(MaxOptimizeDeletionReAdd))
                 {
@@ -401,7 +402,7 @@ namespace QuadTrees.Common
                     {
                         c.Parent = null;
                     }
-                    Clear();
+                    ClearRecursive();
                     AddBulk(buffer.Keys.ToArray(), (a) => buffer[a]);
 #if DEBUG
                     Debug.Assert(_objects == null || _objects.All((a) => a == null || a.Owner != oldOwners[a.Data] || a.Owner == this));
@@ -413,9 +414,17 @@ namespace QuadTrees.Common
                 }
                 Debug.Assert(Count == beforeCount);
                 Debug.Assert(_objects == null || _objects.All((a) => a == null || a.Owner == this));
-                return true;
             }
             return true;
+        }
+
+        private void ClearRecursive()
+        {
+            foreach (var child in GetChildren())
+            {
+                child.ClearRecursive();
+            }
+            Clear();
         }
 
         private UInt32 EncodeMorton2(UInt32 x, UInt32 y)
@@ -853,7 +862,7 @@ namespace QuadTrees.Common
 
                 for (int i = 0; i < _objectCount; i++)
                 {
-                    Debug.Assert(_objects[i].Owner == this);
+                    if (_objects[i].Owner != this) break;//todo: better?
                     put(_objects[i]);
                 }
             }

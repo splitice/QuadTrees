@@ -274,13 +274,11 @@ namespace QuadTrees.Common
                 if (!whereExpr(kv.Key)) continue;
                 set.Add(kv.Value);
             }
-            var parents = new HashSet<TNode>();
             foreach (var s in set)
             {
                 var owner = s.Owner;
                 if (owner.Parent != null)
                 {
-                    parents.Add(owner.Parent);
                     Debug.Assert(owner.Parent.GetChildren().Any((a) => a == owner));
                 }
                 bool qtRemoved = owner.Remove(s);
@@ -289,22 +287,22 @@ namespace QuadTrees.Common
                 Debug.Assert(dictRemoved);
                 Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
             }
+            var ret = set.Count != 0;
             Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
-            do
+            var done = new HashSet<TNode>();
+            foreach (var qto in set)
             {
-                var parents2 = new HashSet<TNode>();
-                foreach (var p in parents)
+                while (qto.Owner != null && done.Add(qto.Owner))
                 {
-                    if (p.CleanThis() && p.Parent != null)
+                    if (qto.Owner.CleanThis())
                     {
-                        parents2.Add(p.Parent);
+                        qto.Owner = qto.Owner.Parent;
                     }
                 }
-                parents = parents2;
-            } while (parents.Count != 0); 
+            }
 
             Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
-            return set.Count != 0;
+            return ret;
         }
 
         #endregion
