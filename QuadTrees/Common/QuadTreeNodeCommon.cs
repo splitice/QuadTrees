@@ -209,7 +209,7 @@ namespace QuadTrees.Common
         /// <summary>
         /// Automatically subdivide this QuadTree and move it's children into the appropriate Quads where applicable.
         /// </summary>
-        internal PointF Subdivide()
+        internal PointF Subdivide(bool recursive = true)
         {
             float area = Rect.Width*Rect.Height;
             if (area < 0.01f || float.IsInfinity(area))
@@ -220,7 +220,7 @@ namespace QuadTrees.Common
             // We've reached capacity, subdivide...
             PointF mid = new PointF(Rect.X + (Rect.Width / 2), Rect.Y + (Rect.Height / 2));
 
-            Subdivide(mid);
+            Subdivide(mid, recursive);
 
             return mid;
         }
@@ -229,7 +229,7 @@ namespace QuadTrees.Common
         /// <summary>
         /// Manually subdivide this QuadTree and move it's children into the appropriate Quads where applicable.
         /// </summary>
-        public void Subdivide(PointF mid)
+        public void Subdivide(PointF mid,  bool recursive = true)
         {
             Debug.Assert(_childTl == null);
             // We've reached capacity, subdivide...
@@ -246,7 +246,7 @@ namespace QuadTrees.Common
                 _objectCount = 0;
                 foreach (var a in nodeList)//todo: bulk insert optimization
                 {
-                    Insert(a);
+                    Insert(a, recursive);
                 }
                 Debug.Assert(Count == nodeList.Count());
             }
@@ -339,7 +339,7 @@ namespace QuadTrees.Common
             }
         }
 
-        internal void CleanThis()
+        internal bool CleanThis()
         {
             if (ChildTl != null)
             {
@@ -386,23 +386,36 @@ namespace QuadTrees.Common
                     if (child._objects != null)
                     {
                         Debug.Assert(child._objects.Take(child._objectCount).All(a => a.Owner != child));
-                        Debug.Assert(_objects.Take(_objectCount).All((a) => a.Owner == this));
                     }
                 }
-                else if (false && emptyChildren != 0 && !HasAtleast(MaxOptimizeDeletionReAdd))
+                else if (emptyChildren != 0 && !HasAtleast(MaxOptimizeDeletionReAdd))
                 {
                     /* If has an empty child & no more than OptimizeThreshold worth of data - rebuild more optimally */
-                    Dictionary<T,QuadTreeObject<T,TNode>> buffer = new Dictionary<T,QuadTreeObject<T,TNode>>();
-                    foreach (var child in GetChildren())
+                    Dictionary<T, QuadTreeObject<T, TNode>> buffer = new Dictionary<T, QuadTreeObject<T, TNode>>();
+                    GetAllObjects((a) => buffer.Add(a.Data, a));
+                    
+#if DEBUG
+                    Dictionary<T, TNode> oldOwners = buffer.ToDictionary((a) => a.Key, (b) => b.Value.Owner);
+#endif
+                    foreach (var c in GetChildren())
                     {
-                        child.GetAllObjects((a)=>buffer.Add(a.Data,a));
+                        c.Parent = null;
                     }
                     Clear();
-                    AddBulk(buffer.Keys.ToArray(),(a)=>buffer[a]);
+                    AddBulk(buffer.Keys.ToArray(), (a) => buffer[a]);
+#if DEBUG
+                    Debug.Assert(_objects == null || _objects.All((a) => a == null || a.Owner != oldOwners[a.Data] || a.Owner == this));
+#endif
                 }
-
+                else
+                {
+                    return false;
+                }
                 Debug.Assert(Count == beforeCount);
+                Debug.Assert(_objects == null || _objects.All((a) => a == null || a.Owner == this));
+                return true;
             }
+            return true;
         }
 
         private UInt32 EncodeMorton2(UInt32 x, UInt32 y)
@@ -432,6 +445,11 @@ namespace QuadTrees.Common
         protected abstract PointF GetMortonPoint(T p);
         internal void InsertStore(PointF tl, PointF br, T[] range, int start, int end, Func<T,QuadTreeObject<T, TNode>> createObject)
         {
+            if (ChildTl != null)
+            {
+                throw new InvalidOperationException("Bulk insert can only be performed on a QuadTree without children");
+            }
+
             var count = end - start;
             float area = (br.X - tl.X) * (br.Y - tl.Y);
             if (count > 8 && area > 0.01f && !float.IsInfinity(area))
@@ -445,15 +463,23 @@ namespace QuadTrees.Common
                 var quater3 = quater2 + quater;
                 Debug.Assert(quater3 + quater - start == count);
 
+                IEnumerable<QuadTreeObject<T, TNode>> objects = null;
+                if (_objectCount != 0)
+                {
+                    objects = _objects.Take(_objectCount);
+                    _objects = null;
+                    _objectCount = 0;
+                }
+
                 //The middlepoint is at the half way mark (2 quaters)
                 PointF middlePoint = GetMortonPoint(range[quater2]);
                 if (ContainsPoint(middlePoint) && tl.X != middlePoint.X && tl.Y != middlePoint.Y && br.X != middlePoint.X && br.Y != middlePoint.Y)
                 {
-                    Subdivide(middlePoint);
+                    Subdivide(middlePoint, false);
                 }
                 else
                 {
-                    middlePoint = Subdivide();
+                    middlePoint = Subdivide(false);
                     Debug.Assert(!float.IsNaN(middlePoint.X));
                 }
 
@@ -461,6 +487,14 @@ namespace QuadTrees.Common
                 ChildTr.InsertStore(new PointF(middlePoint.X, tl.Y), new PointF(br.X, middlePoint.Y), range, quater1, quater2, createObject);
                 ChildBl.InsertStore(new PointF(tl.X, middlePoint.Y), new PointF(middlePoint.X, br.Y), range, quater2, quater3, createObject);
                 ChildBr.InsertStore(middlePoint, br, range, quater3, end, createObject);
+
+                if (objects != null)
+                {
+                    foreach (var t in objects)
+                    {
+                        Insert(t, false);
+                    }
+                }
             }
             else
             {
@@ -468,17 +502,19 @@ namespace QuadTrees.Common
                 {
                     var t = range[start];
                     var qto = createObject(t);
-                    Insert(qto);
+                    Insert(qto, false);
                 }
             }
         }
 
         public void AddBulk(T[] points, Func<T,QuadTreeObject<T, TNode>> createObject)
         {
+#if DEBUG
             if (ChildTl != null)
             {
                 throw new InvalidOperationException("Bulk add can only be performed on a QuadTree without children");
             }
+#endif
 
             //Find the max / min morton points
             float minX = float.MaxValue, maxX = float.MinValue, minY = float.MaxValue, maxY = float.MinValue;
@@ -514,8 +550,7 @@ namespace QuadTrees.Common
 
         internal void CleanUpwards()
         {
-            CleanThis();
-            if (Parent != null && IsEmpty)
+            if (CleanThis() && Parent != null)
             {
                 Parent.CleanUpwards();
             }
@@ -604,12 +639,12 @@ namespace QuadTrees.Common
         }
 
 
-
         /// <summary>
         /// Insert an item into this QuadTree object.
         /// </summary>
         /// <param name="item">The item to insert.</param>
-        public void Insert(QuadTreeObject<T, TNode> item)
+        /// <param name="canSubdivide"></param>
+        public void Insert(QuadTreeObject<T, TNode> item, bool canSubdivide = true)
         {
             // If this quad doesn't contain the items rectangle, do nothing, unless we are the root
             if (!CheckContains(Rect, item.Data))
@@ -619,7 +654,7 @@ namespace QuadTrees.Common
                 if (Parent != null)
                 {
                     // This object is outside of the QuadTree bounds, we should add it at the root level
-                    Parent.Insert(item);
+                    Parent.Insert(item, canSubdivide);
                 }
                 return;
             }
@@ -635,7 +670,15 @@ namespace QuadTrees.Common
                 // No quads, create them and bump objects down where appropriate
                 if (ChildTl == null)
                 {
-                    Subdivide();
+                    if (canSubdivide)
+                    {
+                        Subdivide();
+                    }
+                    else
+                    {
+                        Add(item);
+                        return;
+                    }
                 }
 
                 // Find out which tree this object should go in and add it there
@@ -646,7 +689,7 @@ namespace QuadTrees.Common
                 }
                 else
                 {
-                    destTree.Insert(item);
+                    destTree.Insert(item, canSubdivide);
                 }
             }
         }
@@ -810,6 +853,7 @@ namespace QuadTrees.Common
 
                 for (int i = 0; i < _objectCount; i++)
                 {
+                    Debug.Assert(_objects[i].Owner == this);
                     put(_objects[i]);
                 }
             }

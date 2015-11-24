@@ -157,7 +157,7 @@ namespace QuadTrees.Common
             }
             Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
             WrappedDictionary.Add(item, wrappedObject);
-            QuadTreePointRoot.Insert(wrappedObject);
+            QuadTreePointRoot.Insert(wrappedObject, true);
             //Debug.Assert(WrappedDictionary.Values.Distinct().Count() == WrappedDictionary.Count);
             Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
         }
@@ -290,10 +290,18 @@ namespace QuadTrees.Common
                 Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
             }
             Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
-            foreach (var p in parents)
+            do
             {
-                p.CleanUpwards();
-            }
+                var parents2 = new HashSet<TNode>();
+                foreach (var p in parents)
+                {
+                    if (p.CleanThis() && p.Parent != null)
+                    {
+                        parents2.Add(p.Parent);
+                    }
+                }
+                parents = parents2;
+            } while (parents.Count != 0); 
 
             Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
             return set.Count != 0;
