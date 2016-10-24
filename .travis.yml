@@ -4,7 +4,9 @@ mono:
   - latest
 git:
   depth: 300
-  
+install:
+  - sudo apt-get -qq install nunit-console realpath
+
 script:
   - bash travis-ci/autoversion.sh QuadTrees
   - export EnableNuGetPackageRestore=false
