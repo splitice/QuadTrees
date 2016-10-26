@@ -354,14 +354,14 @@ namespace QuadTrees.Common
             Debug.Assert(WrappedDictionary.Count == origCount + points.Count());
         }
 
-        public void AddBulk(IEnumerable<TObject> points)
+        public void AddBulk(IEnumerable<TObject> points, int threadLevel = 0)
         {
             QuadTreePointRoot.AddBulk(points.ToArray(), (a) =>
             {
                 var qto = new QuadTreeObject<TObject, TNode>(a);
                 WrappedDictionary.Add(a, qto);
                 return qto;
-            });
+            }, threadLevel);
             Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
             Debug.Assert(WrappedDictionary.Count == points.Count());
         }

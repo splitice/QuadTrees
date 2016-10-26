@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Threading.Tasks;
 using QuadTrees.Helper;
 
 namespace QuadTrees.Common
@@ -452,7 +454,7 @@ namespace QuadTrees.Common
         }
 
         protected abstract PointF GetMortonPoint(T p);
-        internal void InsertStore(PointF tl, PointF br, T[] range, int start, int end, Func<T,QuadTreeObject<T, TNode>> createObject)
+        internal void InsertStore(PointF tl, PointF br, T[] range, int start, int end, Func<T,QuadTreeObject<T, TNode>> createObject, int threadLevel, List<Task> tasks = null)
         {
             if (ChildTl != null)
             {
@@ -492,13 +494,33 @@ namespace QuadTrees.Common
                     Debug.Assert(!float.IsNaN(middlePoint.X));
                 }
 
-                ChildTl.InsertStore(tl, middlePoint, range, start, quater1, createObject);
-                ChildTr.InsertStore(new PointF(middlePoint.X, tl.Y), new PointF(br.X, middlePoint.Y), range, quater1, quater2, createObject);
-                ChildBl.InsertStore(new PointF(tl.X, middlePoint.Y), new PointF(middlePoint.X, br.Y), range, quater2, quater3, createObject);
-                ChildBr.InsertStore(middlePoint, br, range, quater3, end, createObject);
+                if (threadLevel == 0)
+                {
+                    ChildTl.InsertStore(tl, middlePoint, range, start, quater1, createObject, 0);
+                    ChildTr.InsertStore(new PointF(middlePoint.X, tl.Y), new PointF(br.X, middlePoint.Y), range, quater1,
+                        quater2, createObject, 0);
+                    ChildBl.InsertStore(new PointF(tl.X, middlePoint.Y), new PointF(middlePoint.X, br.Y), range, quater2,
+                        quater3, createObject, 0);
+                    ChildBr.InsertStore(middlePoint, br, range, quater3, end, createObject, 0);
+                }
+                else if(threadLevel == 1)
+                {
+                    Debug.Assert(objects == null || _objectCount == 0);
+                    lock (tasks)
+                    {
+                        
+                        tasks.Add(Task.Run(()=>ChildTl.InsertStore(tl, middlePoint, range, start, quater1, createObject, 0)));
+                        tasks.Add(Task.Run(()=>ChildTr.InsertStore(new PointF(middlePoint.X, tl.Y), new PointF(br.X, middlePoint.Y), range, quater1,
+                            quater2, createObject, 0)));
+                        tasks.Add(Task.Run(()=>ChildBl.InsertStore(new PointF(tl.X, middlePoint.Y), new PointF(middlePoint.X, br.Y), range, quater2,
+                            quater3, createObject, 0)));
+                        tasks.Add(Task.Run(()=>ChildBr.InsertStore(middlePoint, br, range, quater3, end, createObject, 0)));
+                    }
+                }
 
                 if (objects != null)
                 {
+                    Debug.Assert(threadLevel == 0);//Only new QT's support threading
                     foreach (var t in objects)
                     {
                         Insert(t, false);
@@ -516,7 +538,7 @@ namespace QuadTrees.Common
             }
         }
 
-        public void AddBulk(T[] points, Func<T,QuadTreeObject<T, TNode>> createObject)
+        public void AddBulk(T[] points, Func<T,QuadTreeObject<T, TNode>> createObject, int threadLevel = 0)
         {
 #if DEBUG
             if (ChildTl != null)
@@ -526,35 +548,85 @@ namespace QuadTrees.Common
 #endif
 
             //Find the max / min morton points
+            int threads = 0;
             float minX = float.MaxValue, maxX = float.MinValue, minY = float.MaxValue, maxY = float.MinValue;
-            foreach (var p in points)
+            if (threadLevel > 0)
             {
-                var point = GetMortonPoint(p);
-                if (point.X > maxX)
+                object lockObj = new object();
+                threads = (int)Math.Pow(threadLevel, 4);
+                Parallel.ForEach(Partitioner.Create(0, points.Length, (int)Math.Ceiling(((float)points.Length) / threads)), (a) =>
                 {
-                    maxX = point.X;
-                }
-                if (point.X < minX)
+                    float localMinX = float.MaxValue,
+                        localMaxX = float.MinValue,
+                        localMinY = float.MaxValue,
+                        localMaxY = float.MinValue;
+                    for (int i = a.Item1; i < a.Item2; i++)
+                    {
+                        var point = GetMortonPoint(points[i]);
+                        if (point.X > localMaxX)
+                        {
+                            localMaxX = point.X;
+                        }
+                        if (point.X < localMinX)
+                        {
+                            localMinX = point.X;
+                        }
+                        if (point.Y > localMaxX)
+                        {
+                            localMaxX = point.Y;
+                        }
+                        if (point.Y < localMinY)
+                        {
+                            localMinY = point.Y;
+                        }
+                    }
+
+                    lock (lockObj)
+                    {
+                        minX = Math.Min(localMinX, minX);
+                        minY = Math.Min(localMinY, minY);
+                        maxX = Math.Max(localMaxX, maxX);
+                        maxY = Math.Max(localMaxY, maxY);
+                    }
+                });
+            }
+            else
+            {
+                foreach (var p in points)
                 {
-                    minX = point.X;
-                }
-                if (point.Y > maxY)
-                {
-                    maxY = point.Y;
-                }
-                if (point.Y < minY)
-                {
-                    minY = point.Y;
+                    var point = GetMortonPoint(p);
+                    if (point.X > maxX)
+                    {
+                        maxX = point.X;
+                    }
+                    if (point.X < minX)
+                    {
+                        minX = point.X;
+                    }
+                    if (point.Y > maxY)
+                    {
+                        maxY = point.Y;
+                    }
+                    if (point.Y < minY)
+                    {
+                        minY = point.Y;
+                    }
                 }
             }
+
             //Calculate the width and height of the morton space
             float width = maxX - minX, height = maxY - minY;
 
-            //Return points sorted by motron point
+            //Return points sorted by motron point, MortonIndex2 is slow - so needs caching
             var range = points.Select((a) => new KeyValuePair<UInt32, T>(MortonIndex2(GetMortonPoint(a), minX, minY, width, height), a)).OrderBy((a) => a.Key).Select((a) => a.Value).ToArray();
             Debug.Assert(range.Length == points.Count());
             
-            InsertStore(QuadRect.Location, new PointF(QuadRect.Bottom, QuadRect.Right), range, 0, range.Length, createObject);
+            List<Task> tasks = new List<Task>(threads);
+            InsertStore(QuadRect.Location, new PointF(QuadRect.Bottom, QuadRect.Right), range, 0, range.Length, createObject, threadLevel, tasks);
+            foreach (var task in tasks)
+            {
+                task.Wait();
+            }
         }
 
         internal void CleanUpwards()
