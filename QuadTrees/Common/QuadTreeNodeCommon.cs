@@ -579,41 +579,44 @@ namespace QuadTrees.Common
             {
                 object lockObj = new object();
                 threads = (int)Math.Pow(threadLevel, 4);//, (int)Math.Ceiling(((float)points.Length) / threads)
-                Parallel.ForEach(Partitioner.Create(0, points.Length), (a) =>
+                if (points.Length > 0)
                 {
-                    float localMinX = float.MaxValue,
-                        localMaxX = float.MinValue,
-                        localMinY = float.MaxValue,
-                        localMaxY = float.MinValue;
-                    for (int i = a.Item1; i < a.Item2; i++)
+                    Parallel.ForEach(Partitioner.Create(0, points.Length), (a) =>
                     {
-                        var point = GetMortonPoint(points[i]);
-                        if (point.X > localMaxX)
+                        float localMinX = float.MaxValue,
+                            localMaxX = float.MinValue,
+                            localMinY = float.MaxValue,
+                            localMaxY = float.MinValue;
+                        for (int i = a.Item1; i < a.Item2; i++)
                         {
-                            localMaxX = point.X;
+                            var point = GetMortonPoint(points[i]);
+                            if (point.X > localMaxX)
+                            {
+                                localMaxX = point.X;
+                            }
+                            if (point.X < localMinX)
+                            {
+                                localMinX = point.X;
+                            }
+                            if (point.Y > localMaxX)
+                            {
+                                localMaxX = point.Y;
+                            }
+                            if (point.Y < localMinY)
+                            {
+                                localMinY = point.Y;
+                            }
                         }
-                        if (point.X < localMinX)
-                        {
-                            localMinX = point.X;
-                        }
-                        if (point.Y > localMaxX)
-                        {
-                            localMaxX = point.Y;
-                        }
-                        if (point.Y < localMinY)
-                        {
-                            localMinY = point.Y;
-                        }
-                    }
 
-                    lock (lockObj)
-                    {
-                        minX = Math.Min(localMinX, minX);
-                        minY = Math.Min(localMinY, minY);
-                        maxX = Math.Max(localMaxX, maxX);
-                        maxY = Math.Max(localMaxY, maxY);
-                    }
-                });
+                        lock (lockObj)
+                        {
+                            minX = Math.Min(localMinX, minX);
+                            minY = Math.Min(localMinY, minY);
+                            maxX = Math.Max(localMaxX, maxX);
+                            maxY = Math.Max(localMaxY, maxY);
+                        }
+                    });
+                }
             }
             else
             {
