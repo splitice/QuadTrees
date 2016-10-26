@@ -664,7 +664,7 @@ namespace QuadTrees.Common
             // 2 stage execution, first children - then add objects
             tasks.RemoveAll((task) =>
             {
-                if (task.Status == TaskStatus.WaitingToRun)
+                if (task.Status == TaskStatus.Created)
                 {
                     task.Start();
                     return false;
