@@ -578,8 +578,8 @@ namespace QuadTrees.Common
             if (threadLevel > 0)
             {
                 object lockObj = new object();
-                threads = (int)Math.Pow(threadLevel, 4);
-                Parallel.ForEach(Partitioner.Create(0, points.Length, (int)Math.Ceiling(((float)points.Length) / threads)), (a) =>
+                threads = (int)Math.Pow(threadLevel, 4);//, (int)Math.Ceiling(((float)points.Length) / threads)
+                Parallel.ForEach(Partitioner.Create(0, points.Length), (a) =>
                 {
                     float localMinX = float.MaxValue,
                         localMaxX = float.MinValue,
