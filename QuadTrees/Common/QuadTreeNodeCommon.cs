@@ -506,31 +506,40 @@ namespace QuadTrees.Common
                 else
                 {
                     Debug.Assert(objects == null || _objectCount == 0);
-
                     if (--threadLevel == 0)
                     {
-                        lock (tasks)
-                        {
 
-                            tasks.Add(
-                                Task.Run(
-                                    () => ChildTl.InsertStore(tl, middlePoint, range, start, quater1, createObject, 0)));
-                            tasks.Add(
-                                Task.Run(
-                                    () =>
-                                        ChildTr.InsertStore(new PointF(middlePoint.X, tl.Y),
-                                            new PointF(br.X, middlePoint.Y), range, quater1,
-                                            quater2, createObject, 0)));
-                            tasks.Add(
-                                Task.Run(
-                                    () =>
-                                        ChildBl.InsertStore(new PointF(tl.X, middlePoint.Y),
-                                            new PointF(middlePoint.X, br.Y), range, quater2,
-                                            quater3, createObject, 0)));
-                            tasks.Add(
-                                Task.Run(
-                                    () => ChildBr.InsertStore(middlePoint, br, range, quater3, end, createObject, 0)));
+                        tasks.Add(
+                            Task.Run(
+                                () => ChildTl.InsertStore(tl, middlePoint, range, start, quater1, createObject, 0)));
+                        tasks.Add(
+                            Task.Run(
+                                () =>
+                                    ChildTr.InsertStore(new PointF(middlePoint.X, tl.Y),
+                                        new PointF(br.X, middlePoint.Y), range, quater1,
+                                        quater2, createObject, 0)));
+                        tasks.Add(
+                            Task.Run(
+                                () =>
+                                    ChildBl.InsertStore(new PointF(tl.X, middlePoint.Y),
+                                        new PointF(middlePoint.X, br.Y), range, quater2,
+                                        quater3, createObject, 0)));
+                        tasks.Add(
+                            Task.Run(
+                                () => ChildBr.InsertStore(middlePoint, br, range, quater3, end, createObject, 0)));
+
+                        if (objects != null)
+                        {
+                            tasks.Add(new Task(() =>
+                            {
+                                foreach (var t in objects)
+                                {
+                                    Insert(t, false);
+                                }
+                            }));
                         }
+
+                        return;
                     }
                     else
                     {
@@ -651,6 +660,18 @@ namespace QuadTrees.Common
             
             List<Task> tasks = new List<Task>(threads);
             InsertStore(QuadRect.Location, new PointF(QuadRect.Bottom, QuadRect.Right), range, 0, range.Length, createObject, threadLevel, tasks);
+            
+            // 2 stage execution, first children - then add objects
+            tasks.RemoveAll((task) =>
+            {
+                if (task.Status == TaskStatus.WaitingToRun)
+                {
+                    task.Start();
+                    return false;
+                }
+                task.Wait();
+                return true;
+            });
             foreach (var task in tasks)
             {
                 task.Wait();
