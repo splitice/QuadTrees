@@ -503,18 +503,43 @@ namespace QuadTrees.Common
                         quater3, createObject, 0);
                     ChildBr.InsertStore(middlePoint, br, range, quater3, end, createObject, 0);
                 }
-                else if(threadLevel == 1)
+                else
                 {
                     Debug.Assert(objects == null || _objectCount == 0);
-                    lock (tasks)
+
+                    if (--threadLevel == 0)
                     {
-                        
-                        tasks.Add(Task.Run(()=>ChildTl.InsertStore(tl, middlePoint, range, start, quater1, createObject, 0)));
-                        tasks.Add(Task.Run(()=>ChildTr.InsertStore(new PointF(middlePoint.X, tl.Y), new PointF(br.X, middlePoint.Y), range, quater1,
-                            quater2, createObject, 0)));
-                        tasks.Add(Task.Run(()=>ChildBl.InsertStore(new PointF(tl.X, middlePoint.Y), new PointF(middlePoint.X, br.Y), range, quater2,
-                            quater3, createObject, 0)));
-                        tasks.Add(Task.Run(()=>ChildBr.InsertStore(middlePoint, br, range, quater3, end, createObject, 0)));
+                        lock (tasks)
+                        {
+
+                            tasks.Add(
+                                Task.Run(
+                                    () => ChildTl.InsertStore(tl, middlePoint, range, start, quater1, createObject, 0)));
+                            tasks.Add(
+                                Task.Run(
+                                    () =>
+                                        ChildTr.InsertStore(new PointF(middlePoint.X, tl.Y),
+                                            new PointF(br.X, middlePoint.Y), range, quater1,
+                                            quater2, createObject, 0)));
+                            tasks.Add(
+                                Task.Run(
+                                    () =>
+                                        ChildBl.InsertStore(new PointF(tl.X, middlePoint.Y),
+                                            new PointF(middlePoint.X, br.Y), range, quater2,
+                                            quater3, createObject, 0)));
+                            tasks.Add(
+                                Task.Run(
+                                    () => ChildBr.InsertStore(middlePoint, br, range, quater3, end, createObject, 0)));
+                        }
+                    }
+                    else
+                    {
+                        ChildTl.InsertStore(tl, middlePoint, range, start, quater1, createObject, threadLevel, tasks);
+                        ChildTr.InsertStore(new PointF(middlePoint.X, tl.Y), new PointF(br.X, middlePoint.Y), range, quater1,
+                            quater2, createObject, threadLevel, tasks);
+                        ChildBl.InsertStore(new PointF(tl.X, middlePoint.Y), new PointF(middlePoint.X, br.Y), range, quater2,
+                            quater3, createObject, threadLevel, tasks);
+                        ChildBr.InsertStore(middlePoint, br, range, quater3, end, createObject, threadLevel, tasks);
                     }
                 }
 
