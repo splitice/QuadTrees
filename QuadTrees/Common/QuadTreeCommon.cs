@@ -264,20 +264,8 @@ namespace QuadTrees.Common
             return false;
         }
 
-        /// <summary>
-        /// Remove all objects matching an expression (lambda)
-        /// </summary>
-        /// <param name="whereExpr"></param>
-        /// <returns></returns>
-        public bool RemoveAll(Func<TObject,bool> whereExpr)
+        private bool _RemoveAll(List<QuadTreeObject<TObject,TNode>> set,  HashSet<TNode> owners)
         {
-            Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
-            var set = new HashSet<QuadTreeObject<TObject,TNode>>();
-            foreach(var kv in WrappedDictionary){
-                if (!whereExpr(kv.Key)) continue;
-                bool added = set.Add(kv.Value);
-                Debug.Assert(added);
-            }
             foreach (var s in set)
             {
                 var owner = s.Owner;
@@ -294,7 +282,6 @@ namespace QuadTrees.Common
             }
             var ret = set.Count != 0;
             Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
-            var owners = new HashSet<TNode>();
             foreach (var qto in set)
             {
                 while (qto.Owner != null)
@@ -302,17 +289,46 @@ namespace QuadTrees.Common
                     owners.Add(qto.Owner);
                 }
             }
+            
+            return ret;
+        }
+
+        /// <summary>
+        /// Remove all objects matching an expression (lambda)
+        /// </summary>
+        /// <param name="whereExpr"></param>
+        /// <returns></returns>
+        public bool RemoveAll(Func<TObject,bool> whereExpr)
+        {
+            Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
+            bool ret = false;
+            var owners = new HashSet<TNode>();
+            var set = new List<QuadTreeObject<TObject,TNode>>();
+            foreach(var kv in WrappedDictionary){
+                if (!whereExpr(kv.Key)) continue;
+                set.Add(kv.Value);
+
+                if (set.Count > 1024)
+                {
+                    ret |= _RemoveAll(set, owners);
+                    set.Clear();
+                }
+            }
+
+            ret |= _RemoveAll(set, owners);
+
+            //Cleanup tree
             while (owners.Any())
             {
-                var ownersCopy = new HashSet<TNode>(owners);
-                owners.Clear();
-                foreach (var qto in ownersCopy)
+                var ownersNew = new HashSet<TNode>();
+                foreach (var qto in owners)
                 {
                     if (qto.CleanThis() && qto.Parent != null)
                     {
-                        owners.Add(qto.Parent);
+                        ownersNew.Add(qto.Parent);
                     }
                 }
+                owners = ownersNew;
             }
 
             Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
