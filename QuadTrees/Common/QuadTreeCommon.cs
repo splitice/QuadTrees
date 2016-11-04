@@ -318,9 +318,9 @@ namespace QuadTrees.Common
             ret |= _RemoveAll(set, owners);
 
             //Cleanup tree
+            var ownersNew = new HashSet<TNode>();
             while (owners.Any())
             {
-                var ownersNew = new HashSet<TNode>();
                 foreach (var qto in owners)
                 {
                     if (qto.CleanThis() && qto.Parent != null)
@@ -328,7 +328,10 @@ namespace QuadTrees.Common
                         ownersNew.Add(qto.Parent);
                     }
                 }
+                var placeholder = owners;
                 owners = ownersNew;
+                ownersNew = placeholder;
+                ownersNew.Clear();
             }
 
             Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
