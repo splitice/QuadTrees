@@ -14,6 +14,8 @@ namespace QuadTrees.Common
         // How many objects can exist in a QuadTree before it sub divides itself
         public const int MaxObjectsPerNode = 10;//scales up to about 16 on removal
         public const int MaxOptimizeDeletionReAdd = 22;
+        public static float ReBalanceOffset = 0.2f;
+        public const int MinBalance = 256;
 
         protected RectangleF Rect; // The area this QuadTree represents
 
@@ -25,7 +27,9 @@ namespace QuadTrees.Common
             get { return Rect; }
         }
     }
-    public abstract class QuadTreeNodeCommon<T, TNode, TQuery> : QuadTreeNodeCommon where TNode : QuadTreeNodeCommon<T, TNode, TQuery>
+
+    public abstract class QuadTreeNodeCommon<T, TNode, TQuery> : QuadTreeNodeCommon
+        where TNode : QuadTreeNodeCommon<T, TNode, TQuery>
     {
         #region Private Members
 
@@ -43,6 +47,10 @@ namespace QuadTrees.Common
 
         #region Public Properties
 
+        public PointF CenterPoint
+        {
+            get { return _childBr.Rect.Location; }
+        }
 
         /// <summary>
         /// How many total objects are contained within this QuadTree (ie, includes children)
@@ -167,8 +175,8 @@ namespace QuadTrees.Common
             else if (_objectCount == _objects.Length)
             {
                 var old = _objects;
-                _objects = new QuadTreeObject<T, TNode>[old.Length * 2];
-                Array.Copy(old,_objects,old.Length);
+                _objects = new QuadTreeObject<T, TNode>[old.Length*2];
+                Array.Copy(old, _objects, old.Length);
             }
             Debug.Assert(_objectCount < _objects.Length);
 
@@ -186,7 +194,7 @@ namespace QuadTrees.Common
         {
             if (_objects == null) return false;
 
-            int removeIndex = Array.IndexOf(_objects,item,0,_objectCount);
+            int removeIndex = Array.IndexOf(_objects, item, 0, _objectCount);
             if (removeIndex < 0) return false;
 
             if (_objectCount == 1)
@@ -219,7 +227,7 @@ namespace QuadTrees.Common
             }
 
             // We've reached capacity, subdivide...
-            PointF mid = new PointF(Rect.X + (Rect.Width / 2), Rect.Y + (Rect.Height / 2));
+            PointF mid = new PointF(Rect.X + (Rect.Width/2), Rect.Y + (Rect.Height/2));
 
             Subdivide(mid, recursive);
 
@@ -230,7 +238,7 @@ namespace QuadTrees.Common
         /// <summary>
         /// Manually subdivide this QuadTree and move it's children into the appropriate Quads where applicable.
         /// </summary>
-        public void Subdivide(PointF mid,  bool recursive = true)
+        public void Subdivide(PointF mid, bool recursive = true)
         {
             Debug.Assert(_childTl == null);
             // We've reached capacity, subdivide...
@@ -238,14 +246,14 @@ namespace QuadTrees.Common
             _childTr = CreateNode(new RectangleF(mid.X, Rect.Top, Rect.Right - mid.X, mid.Y - Rect.Top));
             _childBl = CreateNode(new RectangleF(Rect.Left, mid.Y, mid.X - Rect.Left, Rect.Bottom - mid.Y));
             _childBr = CreateNode(new RectangleF(mid.X, mid.Y, Rect.Right - mid.X, Rect.Bottom - mid.Y));
-            Debug.Assert(GetChildren().All((a)=>a.Parent == this));
+            Debug.Assert(GetChildren().All((a) => a.Parent == this));
 
             if (_objectCount != 0)
             {
                 var nodeList = _objects.Take(_objectCount);
                 _objects = null;
                 _objectCount = 0;
-                foreach (var a in nodeList)//todo: bulk insert optimization
+                foreach (var a in nodeList) //todo: bulk insert optimization
                 {
                     Insert(a, recursive);
                 }
@@ -344,9 +352,34 @@ namespace QuadTrees.Common
         {
             if (ChildTl != null)
             {
+                if (HasNoMoreThan(MaxObjectsPerNode))
+                {
+                    /* Has few nodes, your children are my children */
+
+                    Dictionary<T, QuadTreeObject<T, TNode>> buffer =
+                        new Dictionary<T, QuadTreeObject<T, TNode>>(MaxObjectsPerNode);
+                    GetAllObjects((a) => buffer.Add(a.Data, a));
+
+#if DEBUG
+                    Dictionary<T, TNode> oldOwners = buffer.ToDictionary((a) => a.Key, (b) => b.Value.Owner);
+#endif
+                    foreach (var c in GetChildren())
+                    {
+                        c.Parent = null;
+                    }
+                    ClearRecursive();
+
+                    AddBulk(buffer.Keys.ToArray(), (a) => buffer[a]);
+#if DEBUG
+                    Debug.Assert(_objects == null || _objects.All((a) => a == null || a.Owner != oldOwners[a.Data] || a.Owner == this));
+#endif
+
+                    return true;
+                }
+
                 var emptyChildren = GetChildren().Count((a) => a.IsEmpty);
                 var beforeCount = Count;
- 
+
                 if (emptyChildren == 4)
                 {
                     /* If all the children are empty leaves, delete all the children */
@@ -356,6 +389,8 @@ namespace QuadTrees.Common
                 {
                     /* Only one child has data, this child can be pushed up */
                     var child = GetChildren().First((a) => !a.IsEmpty);
+
+                    //Move child's children up, we are now their parent
                     _childTl = child._childTl;
                     _childTr = child._childTr;
                     _childBl = child._childBl;
@@ -364,6 +399,7 @@ namespace QuadTrees.Common
                     {
                         c.Parent = this as TNode;
                     }
+
                     //todo: expand these to fill, preserving middle point
                     if (_objectCount == 0)
                     {
@@ -376,12 +412,11 @@ namespace QuadTrees.Common
                     }
                     else
                     {
-                        var origCount = Count;
                         for (int index = 0; index < child._objectCount; index++)
                         {
                             Insert(child._objects[index]);
                         }
-                        Debug.Assert(origCount + child._objectCount == Count);
+                        Debug.Assert(beforeCount + child._objectCount == Count);
                     }
                     if (child._objects != null)
                     {
@@ -395,7 +430,7 @@ namespace QuadTrees.Common
                     /* If has an empty child & no more than OptimizeThreshold worth of data - rebuild more optimally */
                     Dictionary<T, QuadTreeObject<T, TNode>> buffer = new Dictionary<T, QuadTreeObject<T, TNode>>();
                     GetAllObjects((a) => buffer.Add(a.Data, a));
-                    
+
 #if DEBUG
                     Dictionary<T, TNode> oldOwners = buffer.ToDictionary((a) => a.Key, (b) => b.Value.Owner);
 #endif
@@ -435,7 +470,7 @@ namespace QuadTrees.Common
 
         private UInt32 Part1By1(UInt32 x)
         {
-            x &= 0x0000ffff;                  // x = ---- ---- ---- ---- fedc ba98 7654 3210
+            x &= 0x0000ffff; // x = ---- ---- ---- ---- fedc ba98 7654 3210
             x = (x ^ (x << 8)) & 0x00ff00ff; // x = ---- ---- fedc ba98 ---- ---- 7654 3210
             x = (x ^ (x << 4)) & 0x0f0f0f0f; // x = ---- fedc ---- ba98 ---- 7654 ---- 3210
             x = (x ^ (x << 2)) & 0x33333333; // x = --fe --dc --ba --98 --76 --54 --32 --10
@@ -446,14 +481,16 @@ namespace QuadTrees.Common
         private UInt32 MortonIndex2(PointF pointF, float minX, float minY, float width, float height)
         {
             pointF = new PointF(pointF.X - minX, pointF.Y - minY);
-            var pX = (UInt32)(UInt16.MaxValue * pointF.X / width);
-            var pY = (UInt32)(UInt16.MaxValue * pointF.Y / height);
+            var pX = (UInt32) (UInt16.MaxValue*pointF.X/width);
+            var pY = (UInt32) (UInt16.MaxValue*pointF.Y/height);
 
             return EncodeMorton2(pX, pY);
         }
 
         protected abstract PointF GetMortonPoint(T p);
-        internal void InsertStore(PointF tl, PointF br, T[] range, int start, int end, Func<T,QuadTreeObject<T, TNode>> createObject, int threadLevel, List<Task> tasks = null)
+
+        internal void InsertStore(PointF tl, PointF br, T[] range, int start, int end,
+            Func<T, QuadTreeObject<T, TNode>> createObject, int threadLevel, List<Task> tasks = null)
         {
             if (ChildTl != null)
             {
@@ -461,14 +498,14 @@ namespace QuadTrees.Common
             }
 
             var count = end - start;
-            float area = (br.X - tl.X) * (br.Y - tl.Y);
+            float area = (br.X - tl.X)*(br.Y - tl.Y);
             if (count > 8 && area > 0.01f && !float.IsInfinity(area))
             {
                 //If we have more than 8 points and an area of 0.01 then we will subdivide
 
                 //Calculate the offsets in the array for each quater
-                var quater = count / 4;
-                var quater1 = start + quater + (count % 4);
+                var quater = count/4;
+                var quater1 = start + quater + (count%4);
                 var quater2 = quater1 + quater;
                 var quater3 = quater2 + quater;
                 Debug.Assert(quater3 + quater - start == count);
@@ -483,7 +520,8 @@ namespace QuadTrees.Common
 
                 //The middlepoint is at the half way mark (2 quaters)
                 PointF middlePoint = GetMortonPoint(range[quater2]);
-                if (ContainsPoint(middlePoint) && tl.X != middlePoint.X && tl.Y != middlePoint.Y && br.X != middlePoint.X && br.Y != middlePoint.Y)
+                if (ContainsPoint(middlePoint) && tl.X != middlePoint.X && tl.Y != middlePoint.Y &&
+                    br.X != middlePoint.X && br.Y != middlePoint.Y)
                 {
                     Subdivide(middlePoint, false);
                 }
@@ -543,9 +581,11 @@ namespace QuadTrees.Common
                     else
                     {
                         ChildTl.InsertStore(tl, middlePoint, range, start, quater1, createObject, threadLevel, tasks);
-                        ChildTr.InsertStore(new PointF(middlePoint.X, tl.Y), new PointF(br.X, middlePoint.Y), range, quater1,
+                        ChildTr.InsertStore(new PointF(middlePoint.X, tl.Y), new PointF(br.X, middlePoint.Y), range,
+                            quater1,
                             quater2, createObject, threadLevel, tasks);
-                        ChildBl.InsertStore(new PointF(tl.X, middlePoint.Y), new PointF(middlePoint.X, br.Y), range, quater2,
+                        ChildBl.InsertStore(new PointF(tl.X, middlePoint.Y), new PointF(middlePoint.X, br.Y), range,
+                            quater2,
                             quater3, createObject, threadLevel, tasks);
                         ChildBr.InsertStore(middlePoint, br, range, quater3, end, createObject, threadLevel, tasks);
                     }
@@ -553,7 +593,7 @@ namespace QuadTrees.Common
 
                 if (objects != null)
                 {
-                    Debug.Assert(threadLevel == 0);//Only new QT's support threading
+                    Debug.Assert(threadLevel == 0); //Only new QT's support threading
                     foreach (var t in objects)
                     {
                         Insert(t, false);
@@ -571,7 +611,7 @@ namespace QuadTrees.Common
             }
         }
 
-        public void AddBulk(T[] points, Func<T,QuadTreeObject<T, TNode>> createObject, int threadLevel = 0)
+        public void AddBulk(T[] points, Func<T, QuadTreeObject<T, TNode>> createObject, int threadLevel = 0)
         {
 #if DEBUG
             if (ChildTl != null)
@@ -580,13 +620,22 @@ namespace QuadTrees.Common
             }
 #endif
 
+            if (points.Length + _objectCount <= MaxObjectsPerNode)
+            {
+                foreach (var p in points)
+                {
+                    Insert(createObject(p), false);
+                }
+                return;
+            }
+
             //Find the max / min morton points
             int threads = 0;
             float minX = float.MaxValue, maxX = float.MinValue, minY = float.MaxValue, maxY = float.MinValue;
             if (threadLevel > 0)
             {
                 object lockObj = new object();
-                threads = (int)Math.Pow(threadLevel, 4);//, (int)Math.Ceiling(((float)points.Length) / threads)
+                threads = (int) Math.Pow(threadLevel, 4); //, (int)Math.Ceiling(((float)points.Length) / threads)
                 if (points.Length > 0)
                 {
                     Parallel.ForEach(Partitioner.Create(0, points.Length), (a) =>
@@ -654,12 +703,18 @@ namespace QuadTrees.Common
             float width = maxX - minX, height = maxY - minY;
 
             //Return points sorted by motron point, MortonIndex2 is slow - so needs caching
-            var range = points.Select((a) => new KeyValuePair<UInt32, T>(MortonIndex2(GetMortonPoint(a), minX, minY, width, height), a)).OrderBy((a) => a.Key).Select((a) => a.Value).ToArray();
+            var range =
+                points.Select(
+                    (a) => new KeyValuePair<UInt32, T>(MortonIndex2(GetMortonPoint(a), minX, minY, width, height), a))
+                    .OrderBy((a) => a.Key)
+                    .Select((a) => a.Value)
+                    .ToArray();
             Debug.Assert(range.Length == points.Count());
-            
+
             List<Task> tasks = new List<Task>(threads);
-            InsertStore(QuadRect.Location, new PointF(QuadRect.Bottom, QuadRect.Right), range, 0, range.Length, createObject, threadLevel, tasks);
-            
+            InsertStore(QuadRect.Location, new PointF(QuadRect.Bottom, QuadRect.Right), range, 0, range.Length,
+                createObject, threadLevel, tasks);
+
             // 2 stage execution, first children - then add objects
             tasks.RemoveAll((task) =>
             {
@@ -686,6 +741,7 @@ namespace QuadTrees.Common
         }
 
         #endregion
+
         public bool ContainsPoint(PointF point)
         {
             return Rect.Contains(point);
@@ -740,6 +796,11 @@ namespace QuadTrees.Common
         {
             _HasAtLeast(ref objects);
             return objects <= 0;
+        }
+
+        public bool HasNoMoreThan(int objects)
+        {
+            return !HasAtleast(objects + 1);
         }
 
 
@@ -921,12 +982,12 @@ namespace QuadTrees.Common
         public void GetObjects(TQuery searchRect, Action<T> put)
         {
             // We can't do anything if the results list doesn't exist
-            if (QueryContains(searchRect,Rect))
+            if (QueryContains(searchRect, Rect))
             {
                 // If the search area completely contains this quad, just get every object this quad and all it's children have
                 GetAllObjects(put);
             }
-            else if (QueryIntersects(searchRect,Rect))
+            else if (QueryIntersects(searchRect, Rect))
             {
                 // Otherwise, if the quad isn't fully contained, only add objects that intersect with the search rectangle
                 if (_objects != null)
@@ -972,17 +1033,17 @@ namespace QuadTrees.Common
             GetAllObjects((a) => put(a.Data));
         }
 
-        public void GetAllObjects(Action<QuadTreeObject<T,TNode>> put)
+        public void GetAllObjects(Action<QuadTreeObject<T, TNode>> put)
         {
             // If this Quad has objects, add them
             if (_objects != null)
             {
                 Debug.Assert(_objectCount != 0);
-                Debug.Assert(_objectCount == _objects.Count((a)=>a!=null));
+                Debug.Assert(_objectCount == _objects.Count((a) => a != null));
 
                 for (int i = 0; i < _objectCount; i++)
                 {
-                    if (_objects[i].Owner != this) break;//todo: better?
+                    if (_objects[i].Owner != this) break; //todo: better?
                     put(_objects[i]);
                 }
             }
@@ -1001,8 +1062,35 @@ namespace QuadTrees.Common
             }
         }
 
-        #endregion
+        private PointF CalculateBalance(out float top, out float bottom, out float left, out float right)
+        {
+            var counts = new List<float>(4);
+            int i = 0;
+            foreach (var c in GetChildren())
+            {
+                counts[i++] = c.Count;
+            }
+
+            if (counts.Sum() < MinBalance)
+            {
+                top = 0;
+                bottom = 0;
+                left = 0;
+                right = 0;
+                return new PointF(1, 1);
+            }
+
+            top = counts[0] + counts[1];
+            bottom = counts[2] + counts[3];
+            float yBalance = top/bottom;
+            left = counts[0] + counts[3];
+            right = counts[1] + counts[4];
+            float xBalance = left/right;
+
+            return new PointF(xBalance, yBalance);
+        }
     }
+
 
     public abstract class QuadTreeNodeCommon<T, TNode> : QuadTreeNodeCommon<T, TNode, RectangleF>
         where TNode : QuadTreeNodeCommon<T, TNode>
@@ -1030,6 +1118,99 @@ namespace QuadTrees.Common
         {
             return search.Intersects(rect);
         }
+
+        /*
+        public void Rebalance()
+        {
+            if (ChildTl == null)
+            {
+                return;
+            }
+
+            var centerPoint = CenterPoint;
+            float top, bottom, left, right;
+            var balance = CalculateBalance(out top, out bottom, out left, out right);
+            var yB = Math.Abs(balance.Y - 1);
+            var xB = Math.Abs(balance.X - 1);
+            var xVy = yB - xB;
+            float incrementer;
+            bool inv = false;
+
+            if (xVy > 0)
+            {
+                incrementer = QuadRect.Height * yB * 0.3f;
+                if (balance.Y < (1 + ReBalanceOffset))
+                {
+                    //Top Heavy
+                    inv = true;
+                }
+                else if (balance.Y < (1 - ReBalanceOffset))
+                {
+                    //Bottom Heavy
+                }
+                else
+                {
+                    return;
+                }
+
+                RectangleF searchRect;
+                
+                List<T> buffer = new List<T>();
+                List<T> bufferCopy = new List<T>();
+                float newB;
+                do
+                {
+                    if (inv)
+                    {
+                        searchRect = new RectangleF(QuadRect.X, QuadRect.Y - incrementer, QuadRect.Width, incrementer);
+                    }
+                    else
+                    {
+                        searchRect = new RectangleF(QuadRect.X, QuadRect.Y, QuadRect.Width, incrementer);
+                    }
+
+                    GetObjects(searchRect, buffer.Add);
+
+                    newB =
+                        Math.Abs((top +
+                                  (inv ? buffer.Count : -buffer.Count)/(bottom + (inv ? -buffer.Count : buffer.Count))) -
+                                 1);
+
+                    if (newB <= yB)
+                    {
+                        incrementer *= 2;
+                        bufferCopy = buffer;
+                        buffer = new List<T>(buffer.Capacity);
+                    }
+                } while (newB <= yB);
+
+                if (bufferCopy.Any())
+                {
+                    if (inv)
+                    {
+                        
+                    }
+                }
+            }
+            else
+            {
+
+                if (balance.X < (1 + ReBalanceOffset))
+                {
+                    //Left Heavy
+                }
+                else if (balance.X < (1 - ReBalanceOffset))
+                {
+                    //Right Heavy
+                }
+                else
+                {
+                    return;
+                }
+            }
+        }*/
+
+        #endregion
     }
 
     public abstract class QuadTreeNodeCommonPoint<T, TNode> : QuadTreeNodeCommon<T, TNode, PointF>

@@ -279,17 +279,9 @@ namespace QuadTrees.Common
                 Debug.Assert(r);
 
                 Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
+                owners.Add(owner);
             }
             var ret = set.Count != 0;
-            Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
-            foreach (var qto in set)
-            {
-                while (qto.Owner != null)
-                {
-                    owners.Add(qto.Owner);
-                }
-            }
-            
             return ret;
         }
 
@@ -301,21 +293,14 @@ namespace QuadTrees.Common
         public bool RemoveAll(Func<TObject,bool> whereExpr)
         {
             Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
-            bool ret = false;
             var owners = new HashSet<TNode>();
             var set = new List<QuadTreeObject<TObject,TNode>>();
             foreach(var kv in WrappedDictionary){
                 if (!whereExpr(kv.Key)) continue;
                 set.Add(kv.Value);
-
-                if (set.Count > 1024)
-                {
-                    ret |= _RemoveAll(set, owners);
-                    set.Clear();
-                }
             }
 
-            ret |= _RemoveAll(set, owners);
+            var ret = _RemoveAll(set, owners);
 
             //Cleanup tree
             var ownersNew = new HashSet<TNode>();
