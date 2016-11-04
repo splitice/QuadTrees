@@ -399,7 +399,12 @@ namespace QuadTrees.Common
             Debug.Assert(WrappedDictionary.Count == points.Count());
         }
 
-        public void TreeStats(ref int internalNodes, ref int leafNodes)
+        /// <summary>
+        /// Get stats from the tree
+        /// </summary>
+        /// <param name="internalNodes"></param>
+        /// <param name="leafNodes"></param>
+        public void TreeStats(out int internalNodes, out int leafNodes)
         {
             leafNodes = WrappedDictionary.Count;
             internalNodes = QuadTreePointRoot.CountNodes - leafNodes;
