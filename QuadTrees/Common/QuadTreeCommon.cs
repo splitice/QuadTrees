@@ -251,9 +251,12 @@ namespace QuadTrees.Common
             QuadTreeObject<TObject, TNode> obj;
             if (WrappedDictionary.TryGetValue(item, out obj))
             {
-                obj.Owner.Remove(obj);
-                WrappedDictionary.Remove(item);
-                obj.Owner.CleanUpwards();
+                var owner = obj.Owner;
+                bool r = owner.Remove(obj);
+                Debug.Assert(r);
+                r = WrappedDictionary.Remove(item);
+                Debug.Assert(r);
+                owner.CleanUpwards();
                 Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
                 return true;
             }
@@ -272,7 +275,8 @@ namespace QuadTrees.Common
             var set = new HashSet<QuadTreeObject<TObject,TNode>>();
             foreach(var kv in WrappedDictionary){
                 if (!whereExpr(kv.Key)) continue;
-                set.Add(kv.Value);
+                bool added = set.Add(kv.Value);
+                Debug.Assert(added);
             }
             foreach (var s in set)
             {
@@ -281,22 +285,32 @@ namespace QuadTrees.Common
                 {
                     Debug.Assert(owner.Parent.GetChildren().Any((a) => a == owner));
                 }
-                bool qtRemoved = owner.Remove(s);
-                Debug.Assert(qtRemoved);
-                bool dictRemoved = WrappedDictionary.Remove(s.Data);
-                Debug.Assert(dictRemoved);
+                bool r = owner.Remove(s);
+                Debug.Assert(r);
+                r = WrappedDictionary.Remove(s.Data);
+                Debug.Assert(r);
+
                 Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
             }
             var ret = set.Count != 0;
             Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
-            var done = new HashSet<TNode>();
+            var owners = new HashSet<TNode>();
             foreach (var qto in set)
             {
-                while (qto.Owner != null && done.Add(qto.Owner))
+                while (qto.Owner != null)
                 {
-                    if (qto.Owner.CleanThis())
+                    owners.Add(qto.Owner);
+                }
+            }
+            while (owners.Any())
+            {
+                var ownersCopy = new HashSet<TNode>(owners);
+                owners.Clear();
+                foreach (var qto in ownersCopy)
+                {
+                    if (qto.CleanThis() && qto.Parent != null)
                     {
-                        qto.Owner = qto.Owner.Parent;
+                        owners.Add(qto.Parent);
                     }
                 }
             }
