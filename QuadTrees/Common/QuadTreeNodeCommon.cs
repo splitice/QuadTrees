@@ -9,22 +9,28 @@ using QuadTrees.Helper;
 
 namespace QuadTrees.Common
 {
-    public abstract class QuadTreeNodeCommon<T, TNode, TQuery> where TNode : QuadTreeNodeCommon<T, TNode, TQuery>
+    public abstract class QuadTreeNodeCommon
     {
-        #region Constants
-
         // How many objects can exist in a QuadTree before it sub divides itself
         public const int MaxObjectsPerNode = 10;//scales up to about 16 on removal
         public const int MaxOptimizeDeletionReAdd = 22;
 
-        #endregion
+        protected RectangleF Rect; // The area this QuadTree represents
 
+        /// <summary>
+        /// The area this QuadTree represents.
+        /// </summary>
+        internal virtual RectangleF QuadRect
+        {
+            get { return Rect; }
+        }
+    }
+    public abstract class QuadTreeNodeCommon<T, TNode, TQuery> : QuadTreeNodeCommon where TNode : QuadTreeNodeCommon<T, TNode, TQuery>
+    {
         #region Private Members
 
         private QuadTreeObject<T, TNode>[] _objects = null;
         private int _objectCount = 0;
-
-        protected RectangleF Rect; // The area this QuadTree represents
 
         private TNode _parent = null; // The parent of this quad
 
@@ -37,13 +43,6 @@ namespace QuadTrees.Common
 
         #region Public Properties
 
-        /// <summary>
-        /// The area this QuadTree represents.
-        /// </summary>
-        internal virtual RectangleF QuadRect
-        {
-            get { return Rect; }
-        }
 
         /// <summary>
         /// How many total objects are contained within this QuadTree (ie, includes children)
