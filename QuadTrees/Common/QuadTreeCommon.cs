@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace QuadTrees.Common
 {
@@ -264,27 +265,6 @@ namespace QuadTrees.Common
             return false;
         }
 
-        private bool _RemoveAll(List<QuadTreeObject<TObject,TNode>> set,  HashSet<TNode> owners)
-        {
-            foreach (var s in set)
-            {
-                var owner = s.Owner;
-                if (owner.Parent != null)
-                {
-                    Debug.Assert(owner.Parent.GetChildren().Any((a) => a == owner));
-                }
-                bool r = owner.Remove(s);
-                Debug.Assert(r);
-                r = WrappedDictionary.Remove(s.Data);
-                Debug.Assert(r);
-
-                Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
-                owners.Add(owner);
-            }
-            var ret = set.Count != 0;
-            return ret;
-        }
-
         /// <summary>
         /// Remove all objects matching an expression (lambda)
         /// </summary>
@@ -298,9 +278,32 @@ namespace QuadTrees.Common
             foreach(var kv in WrappedDictionary){
                 if (!whereExpr(kv.Key)) continue;
                 set.Add(kv.Value);
-            }
+            } 
 
-            var ret = _RemoveAll(set, owners);
+            //Dictionary removals can happen in the background
+            var bgTask = Task.Run(()=>
+            {
+                foreach (var s in set)
+                {
+                    bool r = WrappedDictionary.Remove(s.Data);
+                    Debug.Assert(r);
+                }
+            });
+            
+            //Process
+            foreach (var s in set)
+            {
+                var owner = s.Owner;
+                if (owner.Parent != null)
+                {
+                    Debug.Assert(owner.Parent.GetChildren().Any((a) => a == owner));
+                }
+                bool r = owner.Remove(s);
+                Debug.Assert(r);
+
+                owners.Add(owner);
+            }
+            var ret = set.Count != 0;
 
             //Cleanup tree
             var ownersNew = new HashSet<TNode>();
@@ -319,6 +322,7 @@ namespace QuadTrees.Common
                 ownersNew.Clear();
             }
 
+            bgTask.Wait();
             Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
             return ret;
         }
