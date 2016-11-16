@@ -753,6 +753,10 @@ namespace QuadTrees.Common
 
         private void ClearChildren()
         {
+            foreach (var child in GetChildren())
+            {
+                child.Parent = null;
+            }
             _childTl = _childTr = _childBl = _childBr = null;
         }
 
