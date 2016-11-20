@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace QuadTrees.Common
@@ -13,7 +14,7 @@ namespace QuadTrees.Common
         #region Private Members
 
         internal readonly Dictionary<TObject, QuadTreeObject<TObject, TNode>> WrappedDictionary = new Dictionary<TObject, QuadTreeObject<TObject, TNode>>();
-
+        private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         // Alternate method, use Parallel arrays
 
         // The root of this quad tree
@@ -281,14 +282,16 @@ namespace QuadTrees.Common
             } 
 
             //Dictionary removals can happen in the background
-            var bgTask = Task.Run(()=>
+            Action dictRemovalProc = () =>
             {
                 foreach (var s in set)
                 {
                     bool r = WrappedDictionary.Remove(s.Data);
                     Debug.Assert(r);
                 }
-            });
+            };
+            var bgTaskCancel = new CancellationTokenSource();
+            var bgTask = Task.Run(dictRemovalProc, bgTaskCancel.Token);
             
             //Process
             foreach (var s in set)
@@ -322,7 +325,16 @@ namespace QuadTrees.Common
                 ownersNew.Clear();
             }
 
-            bgTask.Wait();
+            var bgTaskStatus = bgTask.Status;
+            if (bgTaskStatus == TaskStatus.Running)
+            {
+                bgTask.Wait();
+            }
+            else if(bgTaskStatus != TaskStatus.RanToCompletion)
+            {
+                bgTaskCancel.Cancel();
+                dictRemovalProc();
+            }
             Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
             return ret;
         }
