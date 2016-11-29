@@ -44,7 +44,7 @@ namespace QuadTrees.QTreePointF
 
         protected override bool CheckIntersects(RectangleF searchRect, T data)
         {
-            return searchRect.Contains(data.Point);
+            return CheckContains(searchRect, data);
         }
 
         protected override PointF GetMortonPoint(T p)

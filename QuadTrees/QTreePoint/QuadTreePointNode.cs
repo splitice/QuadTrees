@@ -33,6 +33,10 @@ namespace QuadTrees.QTreePoint
 
         protected override bool CheckContains(Rectangle rectangleF, T data)
         {
+            if (rectangleF.Size.IsEmpty)
+            {
+                return data.Point == rectangleF.Location;
+            }
             return rectangleF.Contains(data.Point);
         }
 
@@ -43,7 +47,7 @@ namespace QuadTrees.QTreePoint
 
         protected override bool CheckIntersects(Rectangle searchRect, T data)
         {
-            return searchRect.Contains(data.Point);
+            return CheckContains(searchRect, data);
         }
 
         protected override Point GetMortonPoint(T p)
