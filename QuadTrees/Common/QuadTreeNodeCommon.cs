@@ -495,8 +495,10 @@ namespace QuadTrees.Common
             }
 
             var count = end - start;
-            int area = (br.X - tl.X) * (br.Y - tl.Y);
-            if (count > 8 && area > 4)
+            int x = (br.X - tl.X);
+            int y = (br.Y - tl.Y);
+            int area = x * y;
+            if (count > 8 && x >= 2 && y >= 2)
             {
                 //If we have more than 8 points and an area of 0.01 then we will subdivide
 
