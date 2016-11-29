@@ -220,16 +220,13 @@ namespace QuadTrees.Common
         /// </summary>
         internal Point Subdivide(bool recursive = true)
         {
-            int area = Rect.Width * Rect.Height;
-            if (area < 0)
-            {
-                return new Point(-1,-1);
-            }
-
             // We've reached capacity, subdivide...
             Point mid = new Point(Rect.X + (Rect.Width / 2), Rect.Y + (Rect.Height / 2));
 
-            Subdivide(mid, recursive);
+            if (Rect.Width > 1 && Rect.Height > 1)
+            {
+                Subdivide(mid, recursive);
+            }
 
             return mid;
         }
@@ -499,7 +496,7 @@ namespace QuadTrees.Common
 
             var count = end - start;
             int area = (br.X - tl.X) * (br.Y - tl.Y);
-            if (count > 8 && area > 0)
+            if (count > 8 && area > 4)
             {
                 //If we have more than 8 points and an area of 0.01 then we will subdivide
 
@@ -863,7 +860,7 @@ namespace QuadTrees.Common
                 // No quads, create them and bump objects down where appropriate
                 if (ChildTl == null)
                 {
-                    if (canSubdivide)
+                    if (canSubdivide && (Rect.Width > 1 && Rect.Height > 1))
                     {
                         Subdivide();
                     }
