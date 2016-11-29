@@ -56,6 +56,8 @@
     <Compile Include="QTreePoint\QuadTreePointNode.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="QTreeRect\IRectFQuadStorable.cs" />
+    <Compile Include="QTreeRect\QuadTreeRectNode.cs" />
     <Compile Include="QTreeRectF\IRectFQuadStorable.cs" />
     <Compile Include="QTreeRectF\QuadTreeRectNode.cs" />
     <Compile Include="QTreeRectF\QuadTreeRectPointInvNode.cs" />
@@ -63,9 +65,11 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="QuadTreePointF.cs" />
+    <Compile Include="QuadTreeRect.cs" />
     <Compile Include="QuadTreeRectF.cs" />
     <Compile Include="QuadTreeRectPointFInverse.cs" />
     <Compile Include="Wrappers\QuadTreePointFWrapper.cs" />
+    <Compile Include="Wrappers\QuadTreeRectWrapper.cs" />
     <Compile Include="Wrappers\QuadTreeRectFWrapper.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
