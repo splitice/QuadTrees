@@ -1,6 +1,6 @@
 ﻿using System.Drawing;
 using QuadTrees.Common;
-using QuadTrees.QTreeRect;
+using QuadTrees.QTreeRectF;
 
 namespace QuadTrees
 {
@@ -8,17 +8,17 @@ namespace QuadTrees
     /// A QuadTree Object that provides fast and efficient storage of Rectangles in a world space, queried using Rectangles.
     /// </summary>
     /// <typeparam name="T">Any object implementing IQuadStorable.</typeparam>
-    public class QuadTreeRect<T> : QuadTreeCommon<T, QuadTreeRectNode<T, RectangleF>, RectangleF> where T : IRectQuadStorable
+    public class QuadTreeRectF<T> : QuadTreeFCommon<T, QuadTreeRectNode<T, RectangleF>, RectangleF> where T : IRectFQuadStorable
     {
-        public QuadTreeRect(RectangleF rect) : base(rect)
+        public QuadTreeRectF(RectangleF rect) : base(rect)
         {
         }
 
-        public QuadTreeRect(float x, float y, float width, float height) : base(x, y, width, height)
+        public QuadTreeRectF(float x, float y, float width, float height) : base(x, y, width, height)
         {
         }
 
-        public QuadTreeRect()
+        public QuadTreeRectF()
         {
         }
 

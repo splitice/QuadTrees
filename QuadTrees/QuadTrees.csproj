@@ -42,20 +42,31 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Common\QuadTreeCommon.cs" />
+    <Compile Include="Common\QuadTreeFCommon.cs" />
+    <Compile Include="Common\QuadTreeFNodeCommon.cs" />
     <Compile Include="Common\QuadTreeNodeCommon.cs" />
     <Compile Include="Common\QuadTreeObject.cs" />
     <Compile Include="Helper\RectangleHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="QTreePoint\IPointQuadStorable.cs" />
-    <Compile Include="QTreePoint\QuadTreePointNode.cs" />
-    <Compile Include="QTreeRect\IRectQuadStorable.cs" />
-    <Compile Include="QTreeRect\QuadTreeRectNode.cs" />
-    <Compile Include="QTreeRect\QuadTreeRectPointInvNode.cs" />
-    <Compile Include="QuadTreePoint.cs" />
-    <Compile Include="QuadTreeRect.cs" />
-    <Compile Include="QuadTreeRectPointInverse.cs" />
-    <Compile Include="Wrappers\QuadTreePointWrapper.cs" />
-    <Compile Include="Wrappers\QuadTreeRectWrapper.cs" />
+    <Compile Include="QTreePointF\IPointQuadStorable.cs" />
+    <Compile Include="QTreePointF\QuadTreePointNode.cs" />
+    <Compile Include="QTreePoint\IPointQuadStorable.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="QTreePoint\QuadTreePointNode.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="QTreeRectF\IRectFQuadStorable.cs" />
+    <Compile Include="QTreeRectF\QuadTreeRectNode.cs" />
+    <Compile Include="QTreeRectF\QuadTreeRectPointInvNode.cs" />
+    <Compile Include="QuadTreePoint.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="QuadTreePointF.cs" />
+    <Compile Include="QuadTreeRectF.cs" />
+    <Compile Include="QuadTreeRectPointFInverse.cs" />
+    <Compile Include="Wrappers\QuadTreePointFWrapper.cs" />
+    <Compile Include="Wrappers\FQuadTreeRectFWrapper.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

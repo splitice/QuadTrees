@@ -1,15 +1,15 @@
 using System.Drawing;
 
-namespace QuadTrees.QTreeRect
+namespace QuadTrees.QTreePointF
 {
     /// <summary>
     /// Interface to define Rect, so that QuadTree knows how to store the object.
     /// </summary>
-    public interface IRectQuadStorable
+    public interface IPointFQuadStorable
     {
         /// <summary>
-        /// The RectangleF that defines the object's boundaries.
+        /// The PointF that defines the object's boundaries.
         /// </summary>
-        RectangleF Rect { get; }
+        PointF Point { get; }
     }
 }

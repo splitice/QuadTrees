@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using QuadTrees.Common;
-using QuadTrees.Common.QuadTrees.Common;
-using QuadTrees.QTreePoint;
+using QuadTrees.QTreePointF;
 
 namespace QuadTrees
 {
@@ -12,27 +11,27 @@ namespace QuadTrees
     /// A QuadTree Object that provides fast and efficient storage of Points in a world space, queried using Rectangles.
     /// </summary>
     /// <typeparam name="T">Any object implementing IQuadStorable.</typeparam>
-    public class QuadTreePoint<T> : QuadTreeCommon<T, QuadTreePointNode<T>, Rectangle> where T : IPointQuadStorable
+    public class QuadTreePointF<T> : QuadTreeFCommon<T, QuadTreePointFNode<T>, RectangleF> where T : IPointFQuadStorable
     {
-        public QuadTreePoint(Rectangle rect)
+        public QuadTreePointF(RectangleF rect)
             : base(rect)
         {
         }
 
-        public QuadTreePoint(int x, int y, int width, int height)
+        public QuadTreePointF(float x, float y, float width, float height)
             : base(x, y, width, height)
         {
         }
 
-        public QuadTreePoint()
+        public QuadTreePointF()
             : base()
         {
 
         }
 
-        protected override QuadTreePointNode<T> CreateNode(Rectangle rect)
+        protected override QuadTreePointFNode<T> CreateNode(RectangleF rect)
         {
-            return new QuadTreePointNode<T>(rect);
+            return new QuadTreePointFNode<T>(rect);
         }
     }
 }

@@ -1,11 +1,10 @@
 using System.Drawing;
 using QuadTrees.Common;
-using QuadTrees.QTreePoint;
 
-namespace QuadTrees.QTreeRect
+namespace QuadTrees.QTreeRectF
 {
 
-    public class QuadTreeRectPointInvNode<T> : QuadTreeRectNode<T, PointF> where T : IRectQuadStorable
+    public class QuadTreeRectPointInvNode<T> : QuadTreeRectNode<T, PointF> where T : IRectFQuadStorable
     {
         public QuadTreeRectPointInvNode(RectangleF rect) : base(rect)
         {

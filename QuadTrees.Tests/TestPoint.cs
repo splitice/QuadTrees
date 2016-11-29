@@ -5,15 +5,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using NUnit.Framework;
-using QuadTrees.QTreePoint;
-using QuadTrees.QTreeRect;
+using QuadTrees.QTreePointF;
+using QuadTrees.QTreeRectF;
 
 namespace QuadTrees.Tests
 {
     [TestFixture]
     public class TestPoint
     {
-        class QTreeObject: IPointQuadStorable
+        class QTreeObject: IPointFQuadStorable
         {
             private PointF _rect;
 
@@ -30,7 +30,7 @@ namespace QuadTrees.Tests
         [TestCase]
         public void TestListQuery()
         {
-            QuadTreePoint<QTreeObject> qtree = new QuadTreePoint<QTreeObject>();
+            QuadTreePointF<QTreeObject> qtree = new QuadTreePointF<QTreeObject>();
             qtree.AddRange(new List<QTreeObject>
             {
                 new QTreeObject(new PointF(10,10)),
@@ -43,7 +43,7 @@ namespace QuadTrees.Tests
         [TestCase]
         public void TestListQueryOutput()
         {
-            QuadTreePoint<QTreeObject> qtree = new QuadTreePoint<QTreeObject>();
+            QuadTreePointF<QTreeObject> qtree = new QuadTreePointF<QTreeObject>();
             qtree.AddRange(new List<QTreeObject>
             {
                 new QTreeObject(new PointF(10,10)),
@@ -57,7 +57,7 @@ namespace QuadTrees.Tests
         [TestCase]
         public void TestListQueryEnum()
         {
-            QuadTreePoint<QTreeObject> qtree = new QuadTreePoint<QTreeObject>();
+            QuadTreePointF<QTreeObject> qtree = new QuadTreePointF<QTreeObject>();
             qtree.AddRange(new List<QTreeObject>
             {
                 new QTreeObject(new PointF(10,10)),
@@ -70,7 +70,7 @@ namespace QuadTrees.Tests
         [TestCase]
         public void TestListGetAll()
         {
-            QuadTreePoint<QTreeObject> qtree = new QuadTreePoint<QTreeObject>();
+            QuadTreePointF<QTreeObject> qtree = new QuadTreePointF<QTreeObject>();
             qtree.AddRange(new List<QTreeObject>
             {
                 new QTreeObject(new PointF(10,10)),

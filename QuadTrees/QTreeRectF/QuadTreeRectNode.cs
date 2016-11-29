@@ -2,13 +2,13 @@ using System.Drawing;
 using QuadTrees.Common;
 using QuadTrees.Helper;
 
-namespace QuadTrees.QTreeRect
+namespace QuadTrees.QTreeRectF
 {
     /// <summary>
     /// A QuadTree Object that provides fast and efficient storage of objects in a world space.
     /// </summary>
     /// <typeparam name="T">Any object implementing IQuadStorable.</typeparam>
-    public abstract class QuadTreeRectNode<T, TQuery> : QuadTreeNodeCommon<T, QuadTreeRectNode<T, TQuery>, TQuery> where T : IRectQuadStorable
+    public abstract class QuadTreeRectNode<T, TQuery> : QuadTreeFNodeCommon<T, QuadTreeRectNode<T, TQuery>, TQuery> where T : IRectFQuadStorable
     {
         public QuadTreeRectNode(RectangleF rect) : base(rect)
         {
@@ -28,7 +28,7 @@ namespace QuadTrees.QTreeRect
         }
     }
 
-    public class QuadTreeRectNode<T> : QuadTreeRectNode<T, RectangleF> where T : IRectQuadStorable
+    public class QuadTreeRectNode<T> : QuadTreeRectNode<T, RectangleF> where T : IRectFQuadStorable
     {
         public QuadTreeRectNode(RectangleF rect) : base(rect)
         {

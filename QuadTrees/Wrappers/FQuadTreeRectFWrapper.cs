@@ -4,14 +4,14 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using QuadTrees.QTreeRect;
+using QuadTrees.QTreeRectF;
 
 namespace QuadTrees.Wrappers
 {
     /// <summary>
     /// A simple container for a rectangle in a QuadTree
     /// </summary>
-    public class QuadTreeRectWrapper : IRectQuadStorable
+    public class FQuadTreeRectFWrapper : IRectFQuadStorable
     {
         private RectangleF _rect;
 
@@ -20,7 +20,7 @@ namespace QuadTrees.Wrappers
             get { return _rect; }
         }
 
-        public QuadTreeRectWrapper(RectangleF rect)
+        public FQuadTreeRectFWrapper(RectangleF rect)
         {
             _rect = rect;
         }

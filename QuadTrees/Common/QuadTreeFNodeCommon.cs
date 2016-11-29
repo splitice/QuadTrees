@@ -9,7 +9,7 @@ using QuadTrees.Helper;
 
 namespace QuadTrees.Common
 {
-    public abstract class QuadTreeNodeCommon
+    public abstract class QuadTreeFNodeCommon
     {
         // How many objects can exist in a QuadTree before it sub divides itself
         public const int MaxObjectsPerNode = 10;//scales up to about 16 on removal
@@ -17,19 +17,19 @@ namespace QuadTrees.Common
         public static float ReBalanceOffset = 0.2f;
         public const int MinBalance = 256;
 
-        protected Rectangle Rect; // The area this QuadTree represents
+        protected RectangleF Rect; // The area this QuadTree represents
 
         /// <summary>
         /// The area this QuadTree represents.
         /// </summary>
-        internal virtual Rectangle QuadRect
+        internal virtual RectangleF QuadRect
         {
             get { return Rect; }
         }
     }
 
-    public abstract class QuadTreeNodeCommon<T, TNode, TQuery> : QuadTreeNodeCommon
-        where TNode : QuadTreeNodeCommon<T, TNode, TQuery>
+    public abstract class QuadTreeFNodeCommon<T, TNode, TQuery> : QuadTreeFNodeCommon
+        where TNode : QuadTreeFNodeCommon<T, TNode, TQuery>
     {
         #region Private Members
 
@@ -47,7 +47,7 @@ namespace QuadTrees.Common
 
         #region Public Properties
 
-        public Point CenterPoint
+        public PointF CenterPoint
         {
             get { return _childBr.Rect.Location; }
         }
@@ -133,7 +133,7 @@ namespace QuadTrees.Common
         /// Creates a QuadTree for the specified area.
         /// </summary>
         /// <param name="rect">The area this QuadTree object will encompass.</param>
-        protected QuadTreeNodeCommon(Rectangle rect)
+        protected QuadTreeFNodeCommon(RectangleF rect)
         {
             Rect = rect;
         }
@@ -146,13 +146,13 @@ namespace QuadTrees.Common
         /// <param name="y">The top-right position of the area rectangle.</param>
         /// <param name="width">The width of the area rectangle.</param>
         /// <param name="height">The height of the area rectangle.</param>
-        protected QuadTreeNodeCommon(int x, int y, int width, int height)
+        protected QuadTreeFNodeCommon(float x, float y, float width, float height)
         {
-            Rect = new Rectangle(x, y, width, height);
+            Rect = new RectangleF(x, y, width, height);
         }
 
 
-        internal QuadTreeNodeCommon(TNode parent, Rectangle rect)
+        internal QuadTreeFNodeCommon(TNode parent, RectangleF rect)
             : this(rect)
         {
             _parent = parent;
@@ -175,13 +175,13 @@ namespace QuadTrees.Common
             else if (_objectCount == _objects.Length)
             {
                 var old = _objects;
-                _objects = new QuadTreeObject<T, TNode>[old.Length * 2];
+                _objects = new QuadTreeObject<T, TNode>[old.Length*2];
                 Array.Copy(old, _objects, old.Length);
             }
             Debug.Assert(_objectCount < _objects.Length);
 
             item.Owner = this as TNode;
-            _objects[_objectCount++] = item;
+            _objects[_objectCount ++] = item;
             Debug.Assert(_objects[_objectCount - 1] != null);
         }
 
@@ -205,9 +205,9 @@ namespace QuadTrees.Common
             else
             {
 #if DEBUG
-            item.Owner = null;
+                item.Owner = null;
 #endif
-                _objects[removeIndex] = _objects[--_objectCount];
+                _objects[removeIndex] = _objects[-- _objectCount];
                 _objects[_objectCount] = null;
             }
 
@@ -218,16 +218,16 @@ namespace QuadTrees.Common
         /// <summary>
         /// Automatically subdivide this QuadTree and move it's children into the appropriate Quads where applicable.
         /// </summary>
-        internal Point Subdivide(bool recursive = true)
+        internal PointF Subdivide(bool recursive = true)
         {
-            int area = Rect.Width * Rect.Height;
-            if (area < 0)
+            float area = Rect.Width*Rect.Height;
+            if (area < 0.01f || float.IsInfinity(area))
             {
-                return new Point(-1,-1);
+                return new PointF(float.NaN, float.NaN);
             }
 
             // We've reached capacity, subdivide...
-            Point mid = new Point(Rect.X + (Rect.Width / 2), Rect.Y + (Rect.Height / 2));
+            PointF mid = new PointF(Rect.X + (Rect.Width/2), Rect.Y + (Rect.Height/2));
 
             Subdivide(mid, recursive);
 
@@ -238,14 +238,14 @@ namespace QuadTrees.Common
         /// <summary>
         /// Manually subdivide this QuadTree and move it's children into the appropriate Quads where applicable.
         /// </summary>
-        public void Subdivide(Point mid, bool recursive = true)
+        public void Subdivide(PointF mid, bool recursive = true)
         {
             Debug.Assert(_childTl == null);
             // We've reached capacity, subdivide...
-            _childTl = CreateNode(new Rectangle(Rect.Left, Rect.Top, mid.X - Rect.Left, mid.Y - Rect.Top));
-            _childTr = CreateNode(new Rectangle(mid.X, Rect.Top, Rect.Right - mid.X, mid.Y - Rect.Top));
-            _childBl = CreateNode(new Rectangle(Rect.Left, mid.Y, mid.X - Rect.Left, Rect.Bottom - mid.Y));
-            _childBr = CreateNode(new Rectangle(mid.X, mid.Y, Rect.Right - mid.X, Rect.Bottom - mid.Y));
+            _childTl = CreateNode(new RectangleF(Rect.Left, Rect.Top, mid.X - Rect.Left, mid.Y - Rect.Top));
+            _childTr = CreateNode(new RectangleF(mid.X, Rect.Top, Rect.Right - mid.X, mid.Y - Rect.Top));
+            _childBl = CreateNode(new RectangleF(Rect.Left, mid.Y, mid.X - Rect.Left, Rect.Bottom - mid.Y));
+            _childBr = CreateNode(new RectangleF(mid.X, mid.Y, Rect.Right - mid.X, Rect.Bottom - mid.Y));
             Debug.Assert(GetChildren().All((a) => a.Parent == this));
 
             if (_objectCount != 0)
@@ -261,13 +261,13 @@ namespace QuadTrees.Common
             }
         }
 
-        protected void VerifyNodeAssertions(Rectangle Rectangle)
+        protected void VerifyNodeAssertions(RectangleF rectangleF)
         {
-            Debug.Assert(Rectangle.Width > 0);
-            Debug.Assert(Rectangle.Height > 0);
+            Debug.Assert(rectangleF.Width > 0);
+            Debug.Assert(rectangleF.Height > 0);
         }
 
-        protected abstract TNode CreateNode(Rectangle Rectangle);
+        protected abstract TNode CreateNode(RectangleF rectangleF);
 
         public IEnumerable<TNode> GetChildren()
         {
@@ -361,7 +361,7 @@ namespace QuadTrees.Common
                     GetAllObjects((a) => buffer.Add(a.Data, a));
 
 #if DEBUG
-                Dictionary<T, TNode> oldOwners = buffer.ToDictionary((a) => a.Key, (b) => b.Value.Owner);
+                    Dictionary<T, TNode> oldOwners = buffer.ToDictionary((a) => a.Key, (b) => b.Value.Owner);
 #endif
                     foreach (var c in GetChildren())
                     {
@@ -371,7 +371,7 @@ namespace QuadTrees.Common
 
                     AddBulk(buffer.Keys.ToArray(), (a) => buffer[a]);
 #if DEBUG
-                Debug.Assert(_objects == null || _objects.All((a) => a == null || a.Owner != oldOwners[a.Data] || a.Owner == this));
+                    Debug.Assert(_objects == null || _objects.All((a) => a == null || a.Owner != oldOwners[a.Data] || a.Owner == this));
 #endif
 
                     return true;
@@ -432,7 +432,7 @@ namespace QuadTrees.Common
                     GetAllObjects((a) => buffer.Add(a.Data, a));
 
 #if DEBUG
-                Dictionary<T, TNode> oldOwners = buffer.ToDictionary((a) => a.Key, (b) => b.Value.Owner);
+                    Dictionary<T, TNode> oldOwners = buffer.ToDictionary((a) => a.Key, (b) => b.Value.Owner);
 #endif
                     foreach (var c in GetChildren())
                     {
@@ -441,7 +441,7 @@ namespace QuadTrees.Common
                     ClearRecursive();
                     AddBulk(buffer.Keys.ToArray(), (a) => buffer[a]);
 #if DEBUG
-                Debug.Assert(_objects == null || _objects.All((a) => a == null || a.Owner != oldOwners[a.Data] || a.Owner == this));
+                    Debug.Assert(_objects == null || _objects.All((a) => a == null || a.Owner != oldOwners[a.Data] || a.Owner == this));
 #endif
                 }
                 else
@@ -478,18 +478,18 @@ namespace QuadTrees.Common
             return x;
         }
 
-        private UInt32 MortonIndex2(Point Point, int minX, int minY, int width, int height)
+        private UInt32 MortonIndex2(PointF pointF, float minX, float minY, float width, float height)
         {
-            Point = new Point(Point.X - minX, Point.Y - minY);
-            var pX = (UInt32)(UInt16.MaxValue * Point.X / width);
-            var pY = (UInt32)(UInt16.MaxValue * Point.Y / height);
+            pointF = new PointF(pointF.X - minX, pointF.Y - minY);
+            var pX = (UInt32) (UInt16.MaxValue*pointF.X/width);
+            var pY = (UInt32) (UInt16.MaxValue*pointF.Y/height);
 
             return EncodeMorton2(pX, pY);
         }
 
-        protected abstract Point GetMortonPoint(T p);
+        protected abstract PointF GetMortonPoint(T p);
 
-        internal void InsertStore(Point tl, Point br, T[] range, int start, int end,
+        internal void InsertStore(PointF tl, PointF br, T[] range, int start, int end,
             Func<T, QuadTreeObject<T, TNode>> createObject, int threadLevel, List<Task> tasks = null)
         {
             if (ChildTl != null)
@@ -498,14 +498,14 @@ namespace QuadTrees.Common
             }
 
             var count = end - start;
-            int area = (br.X - tl.X) * (br.Y - tl.Y);
-            if (count > 8 && area > 0)
+            float area = (br.X - tl.X)*(br.Y - tl.Y);
+            if (count > 8 && area > 0.01f && !float.IsInfinity(area))
             {
                 //If we have more than 8 points and an area of 0.01 then we will subdivide
 
                 //Calculate the offsets in the array for each quater
-                var quater = count / 4;
-                var quater1 = start + quater + (count % 4);
+                var quater = count/4;
+                var quater1 = start + quater + (count%4);
                 var quater2 = quater1 + quater;
                 var quater3 = quater2 + quater;
                 Debug.Assert(quater3 + quater - start == count);
@@ -519,7 +519,7 @@ namespace QuadTrees.Common
                 }
 
                 //The middlepoint is at the half way mark (2 quaters)
-                Point middlePoint = GetMortonPoint(range[quater2]);
+                PointF middlePoint = GetMortonPoint(range[quater2]);
                 if (ContainsPoint(middlePoint) && tl.X != middlePoint.X && tl.Y != middlePoint.Y &&
                     br.X != middlePoint.X && br.Y != middlePoint.Y)
                 {
@@ -528,14 +528,15 @@ namespace QuadTrees.Common
                 else
                 {
                     middlePoint = Subdivide(false);
+                    Debug.Assert(!float.IsNaN(middlePoint.X));
                 }
 
                 if (threadLevel == 0)
                 {
                     ChildTl.InsertStore(tl, middlePoint, range, start, quater1, createObject, 0);
-                    ChildTr.InsertStore(new Point(middlePoint.X, tl.Y), new Point(br.X, middlePoint.Y), range, quater1,
+                    ChildTr.InsertStore(new PointF(middlePoint.X, tl.Y), new PointF(br.X, middlePoint.Y), range, quater1,
                         quater2, createObject, 0);
-                    ChildBl.InsertStore(new Point(tl.X, middlePoint.Y), new Point(middlePoint.X, br.Y), range, quater2,
+                    ChildBl.InsertStore(new PointF(tl.X, middlePoint.Y), new PointF(middlePoint.X, br.Y), range, quater2,
                         quater3, createObject, 0);
                     ChildBr.InsertStore(middlePoint, br, range, quater3, end, createObject, 0);
                 }
@@ -551,14 +552,14 @@ namespace QuadTrees.Common
                         tasks.Add(
                             Task.Run(
                                 () =>
-                                    ChildTr.InsertStore(new Point(middlePoint.X, tl.Y),
-                                        new Point(br.X, middlePoint.Y), range, quater1,
+                                    ChildTr.InsertStore(new PointF(middlePoint.X, tl.Y),
+                                        new PointF(br.X, middlePoint.Y), range, quater1,
                                         quater2, createObject, 0)));
                         tasks.Add(
                             Task.Run(
                                 () =>
-                                    ChildBl.InsertStore(new Point(tl.X, middlePoint.Y),
-                                        new Point(middlePoint.X, br.Y), range, quater2,
+                                    ChildBl.InsertStore(new PointF(tl.X, middlePoint.Y),
+                                        new PointF(middlePoint.X, br.Y), range, quater2,
                                         quater3, createObject, 0)));
                         tasks.Add(
                             Task.Run(
@@ -580,10 +581,10 @@ namespace QuadTrees.Common
                     else
                     {
                         ChildTl.InsertStore(tl, middlePoint, range, start, quater1, createObject, threadLevel, tasks);
-                        ChildTr.InsertStore(new Point(middlePoint.X, tl.Y), new Point(br.X, middlePoint.Y), range,
+                        ChildTr.InsertStore(new PointF(middlePoint.X, tl.Y), new PointF(br.X, middlePoint.Y), range,
                             quater1,
                             quater2, createObject, threadLevel, tasks);
-                        ChildBl.InsertStore(new Point(tl.X, middlePoint.Y), new Point(middlePoint.X, br.Y), range,
+                        ChildBl.InsertStore(new PointF(tl.X, middlePoint.Y), new PointF(middlePoint.X, br.Y), range,
                             quater2,
                             quater3, createObject, threadLevel, tasks);
                         ChildBr.InsertStore(middlePoint, br, range, quater3, end, createObject, threadLevel, tasks);
@@ -613,10 +614,10 @@ namespace QuadTrees.Common
         public void AddBulk(T[] points, Func<T, QuadTreeObject<T, TNode>> createObject, int threadLevel = 0)
         {
 #if DEBUG
-        if (ChildTl != null)
-        {
-            throw new InvalidOperationException("Bulk add can only be performed on a QuadTree without children");
-        }
+            if (ChildTl != null)
+            {
+                throw new InvalidOperationException("Bulk add can only be performed on a QuadTree without children");
+            }
 #endif
 
             if (points.Length + _objectCount <= MaxObjectsPerNode)
@@ -630,19 +631,19 @@ namespace QuadTrees.Common
 
             //Find the max / min morton points
             int threads = 0;
-            int minX = int.MaxValue, maxX = int.MinValue, minY = int.MaxValue, maxY = int.MinValue;
+            float minX = float.MaxValue, maxX = float.MinValue, minY = float.MaxValue, maxY = float.MinValue;
             if (threadLevel > 0)
             {
                 object lockObj = new object();
-                threads = (int)Math.Pow(threadLevel, 4); //, (int)Math.Ceiling(((int)points.Length) / threads)
+                threads = (int) Math.Pow(threadLevel, 4); //, (int)Math.Ceiling(((float)points.Length) / threads)
                 if (points.Length > 0)
                 {
                     Parallel.ForEach(Partitioner.Create(0, points.Length), (a) =>
                     {
-                        int localMinX = int.MaxValue,
-                            localMaxX = int.MinValue,
-                            localMinY = int.MaxValue,
-                            localMaxY = int.MinValue;
+                        float localMinX = float.MaxValue,
+                            localMaxX = float.MinValue,
+                            localMinY = float.MaxValue,
+                            localMaxY = float.MinValue;
                         for (int i = a.Item1; i < a.Item2; i++)
                         {
                             var point = GetMortonPoint(points[i]);
@@ -699,7 +700,7 @@ namespace QuadTrees.Common
             }
 
             //Calculate the width and height of the morton space
-            int width = maxX - minX, height = maxY - minY;
+            float width = maxX - minX, height = maxY - minY;
 
             //Return points sorted by motron point, MortonIndex2 is slow - so needs caching
             var range =
@@ -711,7 +712,7 @@ namespace QuadTrees.Common
             Debug.Assert(range.Length == points.Count());
 
             List<Task> tasks = new List<Task>(threads);
-            InsertStore(QuadRect.Location, new Point(QuadRect.Bottom, QuadRect.Right), range, 0, range.Length,
+            InsertStore(QuadRect.Location, new PointF(QuadRect.Bottom, QuadRect.Right), range, 0, range.Length,
                 createObject, threadLevel, tasks);
 
             // 2 stage execution, first children - then add objects
@@ -741,7 +742,7 @@ namespace QuadTrees.Common
 
         #endregion
 
-        public bool ContainsPoint(Point point)
+        public bool ContainsPoint(PointF point)
         {
             return Rect.Contains(point);
         }
@@ -887,13 +888,13 @@ namespace QuadTrees.Common
             }
         }
 
-        protected abstract bool CheckContains(Rectangle Rectangle, T data);
+        protected abstract bool CheckContains(RectangleF rectangleF, T data);
 
 
         /// <summary>
         /// Get the objects in this tree that intersect with the specified rectangle.
         /// </summary>
-        /// <param name="searchRect">The Rectangle to find objects in.</param>
+        /// <param name="searchRect">The RectangleF to find objects in.</param>
         public List<T> GetObjects(TQuery searchRect)
         {
             var results = new List<T>();
@@ -901,13 +902,13 @@ namespace QuadTrees.Common
             return results;
         }
 
-        protected abstract bool QueryContains(TQuery search, Rectangle rect);
-        protected abstract bool QueryIntersects(TQuery search, Rectangle rect);
+        protected abstract bool QueryContains(TQuery search, RectangleF rect);
+        protected abstract bool QueryIntersects(TQuery search, RectangleF rect);
 
         /// <summary>
         /// Get the objects in this tree that intersect with the specified rectangle.
         /// </summary>
-        /// <param name="searchRect">The Rectangle to find objects in.</param>
+        /// <param name="searchRect">The RectangleF to find objects in.</param>
         public IEnumerable<T> EnumObjects(TQuery searchRect)
         {
             Stack<TNode> stack = new Stack<TNode>();
@@ -958,7 +959,7 @@ namespace QuadTrees.Common
                         }
                     }
 
-                    // Get the objects for the search Rectangle from the children
+                    // Get the objects for the search RectangleF from the children
                     if (node.ChildTl != null)
                     {
                         stack.Push(node.ChildTl);
@@ -980,7 +981,7 @@ namespace QuadTrees.Common
         /// <summary>
         /// Get the objects in this tree that intersect with the specified rectangle.
         /// </summary>
-        /// <param name="searchRect">The Rectangle to find objects in.</param>
+        /// <param name="searchRect">The RectangleF to find objects in.</param>
         /// <param name="put"></param>
         public void GetObjects(TQuery searchRect, Action<T> put)
         {
@@ -1005,7 +1006,7 @@ namespace QuadTrees.Common
                     }
                 }
 
-                // Get the objects for the search Rectangle from the children
+                // Get the objects for the search RectangleF from the children
                 if (ChildTl != null)
                 {
                     Debug.Assert(ChildTl != this);
@@ -1065,9 +1066,9 @@ namespace QuadTrees.Common
             }
         }
 
-        private Point CalculateBalance(out int top, out int bottom, out int left, out int right)
+        private PointF CalculateBalance(out float top, out float bottom, out float left, out float right)
         {
-            var counts = new List<int>(4);
+            var counts = new List<float>(4);
             int i = 0;
             foreach (var c in GetChildren())
             {
@@ -1080,48 +1081,46 @@ namespace QuadTrees.Common
                 bottom = 0;
                 left = 0;
                 right = 0;
-                return new Point(1, 1);
+                return new PointF(1, 1);
             }
 
             top = counts[0] + counts[1];
             bottom = counts[2] + counts[3];
-            int yBalance = top / bottom;
+            float yBalance = top/bottom;
             left = counts[0] + counts[3];
             right = counts[1] + counts[4];
-            int xBalance = left / right;
+            float xBalance = left/right;
 
-            return new Point(xBalance, yBalance);
+            return new PointF(xBalance, yBalance);
         }
     }
 
 
-    public abstract class QuadTreeNodeCommon<T, TNode> : QuadTreeNodeCommon<T, TNode, Rectangle>
-        where TNode : QuadTreeNodeCommon<T, TNode>
+    public abstract class QuadTreeFNodeCommon<T, TNode> : QuadTreeFNodeCommon<T, TNode, RectangleF>
+        where TNode : QuadTreeFNodeCommon<T, TNode>
     {
-        protected QuadTreeNodeCommon(Rectangle rect)
-            : base(rect)
+        protected QuadTreeFNodeCommon(RectangleF rect) : base(rect)
         {
         }
 
-        protected QuadTreeNodeCommon(int x, int y, int width, int height)
+        protected QuadTreeFNodeCommon(float x, float y, float width, float height)
             : base(x, y, width, height)
         {
         }
 
-        public QuadTreeNodeCommon(TNode parent, Rectangle rect)
-            : base(parent, rect)
+        public QuadTreeFNodeCommon(TNode parent, RectangleF rect) : base(parent, rect)
         {
         }
 
 
-        protected override bool QueryContains(Rectangle search, Rectangle rect)
+        protected override bool QueryContains(RectangleF search, RectangleF rect)
         {
             return search.Contains(rect);
         }
 
-        protected override bool QueryIntersects(Rectangle search, Rectangle rect)
+        protected override bool QueryIntersects(RectangleF search, RectangleF rect)
         {
-            return Rectangle.Intersect(search, rect) != Rectangle.Empty;
+            return search.Intersects(rect);
         }
 
         /*
@@ -1133,12 +1132,12 @@ namespace QuadTrees.Common
             }
 
             var centerPoint = CenterPoint;
-            int top, bottom, left, right;
+            float top, bottom, left, right;
             var balance = CalculateBalance(out top, out bottom, out left, out right);
             var yB = Math.Abs(balance.Y - 1);
             var xB = Math.Abs(balance.X - 1);
             var xVy = yB - xB;
-            int incrementer;
+            float incrementer;
             bool inv = false;
 
             if (xVy > 0)
@@ -1158,28 +1157,28 @@ namespace QuadTrees.Common
                     return;
                 }
 
-                Rectangle searchRect;
+                RectangleF searchRect;
                 
                 List<T> buffer = new List<T>();
                 List<T> bufferCopy = new List<T>();
-                int newB;
+                float newB;
                 do
                 {
                     if (inv)
                     {
-                        searchRect = new Rectangle(QuadRect.X, QuadRect.Y - incrementer, QuadRect.Width, incrementer);
+                        searchRect = new RectangleF(QuadRect.X, QuadRect.Y - incrementer, QuadRect.Width, incrementer);
                     }
                     else
                     {
-                        searchRect = new Rectangle(QuadRect.X, QuadRect.Y, QuadRect.Width, incrementer);
+                        searchRect = new RectangleF(QuadRect.X, QuadRect.Y, QuadRect.Width, incrementer);
                     }
 
                     GetObjects(searchRect, buffer.Add);
 
                     newB =
                         Math.Abs((top +
-                                    (inv ? buffer.Count : -buffer.Count)/(bottom + (inv ? -buffer.Count : buffer.Count))) -
-                                    1);
+                                  (inv ? buffer.Count : -buffer.Count)/(bottom + (inv ? -buffer.Count : buffer.Count))) -
+                                 1);
 
                     if (newB <= yB)
                     {
@@ -1218,31 +1217,31 @@ namespace QuadTrees.Common
         #endregion
     }
 
-    public abstract class QuadTreeNodeCommonPoint<T, TNode> : QuadTreeNodeCommon<T, TNode, Point>
-        where TNode : QuadTreeNodeCommon<T, TNode, Point>
+    public abstract class QuadTreeNodeFCommonPoint<T, TNode> : QuadTreeFNodeCommon<T, TNode, PointF>
+        where TNode : QuadTreeFNodeCommon<T, TNode, PointF>
     {
-        protected QuadTreeNodeCommonPoint(Rectangle rect)
+        protected QuadTreeNodeFCommonPoint(RectangleF rect)
             : base(rect)
         {
         }
 
-        protected QuadTreeNodeCommonPoint(int x, int y, int width, int height)
+        protected QuadTreeNodeFCommonPoint(int x, int y, int width, int height)
             : base(x, y, width, height)
         {
         }
 
-        public QuadTreeNodeCommonPoint(TNode parent, Rectangle rect)
+        public QuadTreeNodeFCommonPoint(TNode parent, RectangleF rect)
             : base(parent, rect)
         {
         }
 
 
-        protected override bool QueryContains(Point search, Rectangle rect)
+        protected override bool QueryContains(PointF search, RectangleF rect)
         {
             return rect.Contains(search);
         }
 
-        protected override bool QueryIntersects(Point search, Rectangle rect)
+        protected override bool QueryIntersects(PointF search, RectangleF rect)
         {
             return false;
         }

@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Drawing;
 using QuadTrees.Common;
-using QuadTrees.QTreeRect;
 
 namespace QuadTrees.QTreePoint
 {
@@ -11,28 +10,28 @@ namespace QuadTrees.QTreePoint
     /// <typeparam name="T">Any object implementing IQuadStorable.</typeparam>
     public class QuadTreePointNode<T> : QuadTreeNodeCommon<T, QuadTreePointNode<T>> where T : IPointQuadStorable
     {
-        public QuadTreePointNode(RectangleF rect)
+        public QuadTreePointNode(Rectangle rect)
             : base(rect)
         {
         }
 
-        public QuadTreePointNode(float x, float y, float width, float height)
+        public QuadTreePointNode(int x, int y, int width, int height)
             : base(x, y, width, height)
         {
         }
 
-        internal QuadTreePointNode(QuadTreePointNode<T> parent, RectangleF rect)
+        internal QuadTreePointNode(QuadTreePointNode<T> parent, Rectangle rect)
             : base(parent, rect)
         {
         }
 
-        protected override QuadTreePointNode<T> CreateNode(RectangleF rectangleF)
+        protected override QuadTreePointNode<T> CreateNode(Rectangle rectangleF)
         {
             VerifyNodeAssertions(rectangleF);
             return new QuadTreePointNode<T>(this, rectangleF);
         }
 
-        protected override bool CheckContains(RectangleF rectangleF, T data)
+        protected override bool CheckContains(Rectangle rectangleF, T data)
         {
             return rectangleF.Contains(data.Point);
         }
@@ -42,12 +41,12 @@ namespace QuadTrees.QTreePoint
             return CheckContains(QuadRect, qto.Data);
         }
 
-        protected override bool CheckIntersects(RectangleF searchRect, T data)
+        protected override bool CheckIntersects(Rectangle searchRect, T data)
         {
             return searchRect.Contains(data.Point);
         }
 
-        protected override PointF GetMortonPoint(T p)
+        protected override Point GetMortonPoint(T p)
         {
             return p.Point;
         }

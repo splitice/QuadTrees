@@ -5,15 +5,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using NUnit.Framework;
-using QuadTrees.QTreePoint;
-using QuadTrees.QTreeRect;
+using QuadTrees.QTreeRectF;
 
 namespace QuadTrees.Tests
 {
     [TestFixture]
     public class TestRectPoint
     {
-        class QTreeObject : IRectQuadStorable
+        class QTreeObject : IRectFQuadStorable
         {
             private RectangleF _rect;
 
@@ -30,7 +29,7 @@ namespace QuadTrees.Tests
         [TestCase]
         public void TestListQuery()
         {
-            QuadTreeRectPointInverse<QTreeObject> qtree = new QuadTreeRectPointInverse<QTreeObject>();
+            QuadTreeRectPointFInverse<QTreeObject> qtree = new QuadTreeRectPointFInverse<QTreeObject>();
             qtree.AddRange(new List<QTreeObject>
             {
                 new QTreeObject(new RectangleF(10,10,10,10)),
@@ -44,7 +43,7 @@ namespace QuadTrees.Tests
         public void TestListQueryOutput()
         {
             var list = new List<QTreeObject>();
-            QuadTreeRectPointInverse<QTreeObject> qtree = new QuadTreeRectPointInverse<QTreeObject>();
+            QuadTreeRectPointFInverse<QTreeObject> qtree = new QuadTreeRectPointFInverse<QTreeObject>();
             qtree.AddRange(new List<QTreeObject>
             {
                 new QTreeObject(new RectangleF(10,10,10,10)),
@@ -57,7 +56,7 @@ namespace QuadTrees.Tests
         [TestCase]
         public void TestListQueryEnum()
         {
-            QuadTreeRectPointInverse<QTreeObject> qtree = new QuadTreeRectPointInverse<QTreeObject>();
+            QuadTreeRectPointFInverse<QTreeObject> qtree = new QuadTreeRectPointFInverse<QTreeObject>();
             qtree.AddRange(new List<QTreeObject>
             {
                 new QTreeObject(new RectangleF(10,10,10,10)),
@@ -70,7 +69,7 @@ namespace QuadTrees.Tests
         [TestCase]
         public void TestListGetAll()
         {
-            QuadTreeRectPointInverse<QTreeObject> qtree = new QuadTreeRectPointInverse<QTreeObject>();
+            QuadTreeRectPointFInverse<QTreeObject> qtree = new QuadTreeRectPointFInverse<QTreeObject>();
             qtree.AddRange(new List<QTreeObject>
             {
                 new QTreeObject(new RectangleF(10,10,10,10)),

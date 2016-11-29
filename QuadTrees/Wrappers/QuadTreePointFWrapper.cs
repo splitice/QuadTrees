@@ -4,14 +4,14 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using QuadTrees.QTreePoint;
+using QuadTrees.QTreePointF;
 
 namespace QuadTrees.Wrappers
 {
     /// <summary>
     /// A simple container for a point in a QuadTree
     /// </summary>
-    public class QuadTreePointWrapper: IPointQuadStorable
+    public class QuadTreePointFWrapper: IPointFQuadStorable
     {
         private PointF _point;
 
@@ -20,7 +20,7 @@ namespace QuadTrees.Wrappers
             get { return _point; }
         }
 
-        public QuadTreePointWrapper(PointF point)
+        public QuadTreePointFWrapper(PointF point)
         {
             _point = point;
         }
