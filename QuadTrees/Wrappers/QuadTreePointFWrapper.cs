@@ -11,7 +11,7 @@ namespace QuadTrees.Wrappers
     /// <summary>
     /// A simple container for a point in a QuadTree
     /// </summary>
-    public class QuadTreePointFWrapper: IPointFQuadStorable
+    public struct QuadTreePointFWrapper: IPointFQuadStorable
     {
         private PointF _point;
 

@@ -11,7 +11,7 @@ namespace QuadTrees.Wrappers
     /// <summary>
     /// A simple container for a rectangle in a QuadTree
     /// </summary>
-    public class QuadTreeRectFWrapper : IRectFQuadStorable
+    public struct QuadTreeRectFWrapper : IRectFQuadStorable
     {
         private RectangleF _rect;
 
