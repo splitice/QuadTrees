@@ -1118,7 +1118,7 @@ namespace QuadTrees.Common
 
         protected override bool QueryIntersects(Rectangle search, Rectangle rect)
         {
-            return Rectangle.Intersect(search, rect) != Rectangle.Empty;
+            return search.IntersectsWith(rect);
         }
 
         /*

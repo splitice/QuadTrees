@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using QuadTrees.Common;
-using QuadTrees.Common.QuadTrees.Common;
 using QuadTrees.QTreePoint;
 
 namespace QuadTrees

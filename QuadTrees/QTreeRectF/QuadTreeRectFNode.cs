@@ -28,23 +28,23 @@ namespace QuadTrees.QTreeRectF
         }
     }
 
-    public class QuadTreeRectNode<T> : QuadTreeRectNode<T, RectangleF> where T : IRectFQuadStorable
+    public class QuadTreeRectFNode<T> : QuadTreeRectNode<T, RectangleF> where T : IRectFQuadStorable
     {
-        public QuadTreeRectNode(RectangleF rect) : base(rect)
+        public QuadTreeRectFNode(RectangleF rect) : base(rect)
         {
         }
 
-        public QuadTreeRectNode(int x, int y, int width, int height) : base(x, y, width, height)
+        public QuadTreeRectFNode(int x, int y, int width, int height) : base(x, y, width, height)
         {
         }
 
-        internal QuadTreeRectNode(QuadTreeRectNode<T> parent, RectangleF rect) : base(parent, rect)
+        internal QuadTreeRectFNode(QuadTreeRectFNode<T> parent, RectangleF rect) : base(parent, rect)
         {
         }
         protected override QuadTreeRectNode<T, RectangleF> CreateNode(RectangleF rectangleF)
         {
             VerifyNodeAssertions(rectangleF);
-            return new QuadTreeRectNode<T>(this, rectangleF);
+            return new QuadTreeRectFNode<T>(this, rectangleF);
         }
 
         protected override bool CheckIntersects(RectangleF searchRect, T data)

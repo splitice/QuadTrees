@@ -11,5 +11,11 @@ namespace QuadTrees.Helper
                 return a.Y < b.Bottom;
             return false;
         }
+        public static bool Intersects(this Rectangle a, Rectangle b)
+        {
+            if (b.X < a.Right && a.X < b.Right && b.Y < a.Bottom)
+                return a.Y < b.Bottom;
+            return false;
+        }
     }
 }

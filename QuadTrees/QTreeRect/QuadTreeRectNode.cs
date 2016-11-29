@@ -49,7 +49,7 @@ namespace QuadTrees.QTreeRect
 
         protected override bool CheckIntersects(Rectangle searchRect, T data)
         {
-            return Rectangle.Intersect(searchRect, data.Rect) != Rectangle.Empty;
+            return searchRect.IntersectsWith(data.Rect);
         }
 
         public override bool ContainsObject(QuadTreeObject<T, QuadTreeRectNode<T, Rectangle>> qto)
@@ -64,7 +64,7 @@ namespace QuadTrees.QTreeRect
 
         protected override bool QueryIntersects(Rectangle search, Rectangle rect)
         {
-            return Rectangle.Intersect(search, rect) != Rectangle.Empty;
+            return search.IntersectsWith(rect);
         }
         protected override Point GetMortonPoint(T p)
         {

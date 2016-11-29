@@ -24,7 +24,7 @@ namespace QuadTrees
 
         protected override QuadTreeRectNode<T, RectangleF> CreateNode(RectangleF rect)
         {
-            return new QuadTreeRectNode<T>(rect);
+            return new QuadTreeRectFNode<T>(rect);
         }
     }
 }
