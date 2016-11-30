@@ -700,6 +700,15 @@ namespace QuadTrees.Common
             //Calculate the width and height of the morton space
             int width = maxX - minX, height = maxY - minY;
 
+            if (width == 0 || height == 0)
+            {
+                foreach (var p in points)
+                {
+                    Add(createObject(p));
+                }
+                return;
+            }
+
             //Return points sorted by motron point, MortonIndex2 is slow - so needs caching
             var range =
                 points.Select(
