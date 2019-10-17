@@ -12,5 +12,5 @@ script:
   - export EnableNuGetPackageRestore=false
   - cert-sync /etc/ssl/certs/ca-certificates.crt
   - xbuild CI.proj
-  - sudo nunit-console -framework=4.0 ./QuadTrees.Tests/bin/Debug/QuadTrees.Tests.dll -exclude Integration,NotWorkingOnMono
+  - sudo nunit-console -framework=4.0 ./QuadTrees.Tests/bin/Debug/net45/QuadTrees.Tests.dll -exclude Integration,NotWorkingOnMono
   - travis_retry bash travis-ci/nuget-upload.sh
