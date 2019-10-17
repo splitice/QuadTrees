@@ -14,6 +14,9 @@
 		<language>en-US</language>
 	</metadata>
 	<files>
-		<file src="QuadTrees/bin/Release/QuadTrees.dll" target="lib" />
+		<file src="QuadTrees/bin/Release/net45/QuadTrees.dll" target="lib\Net45" />
+		<file src="QuadTrees/bin/Release/netstandard2.0/QuadTrees.dll" target="lib\netstandard2.0" />
+		<file src="QuadTrees/bin/Release/net45/QuadTrees.pdb" target="lib\Net45" />
+		<file src="QuadTrees/bin/Release/netstandard2.0/QuadTrees.pdb" target="lib\netstandard2.0" />
 	</files>
 </package>
