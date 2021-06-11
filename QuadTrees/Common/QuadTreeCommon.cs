@@ -31,8 +31,10 @@ namespace QuadTrees.Common
         /// </summary>
         protected QuadTreeCommon()
         {
+            int maxDimension = (int)Math.Sqrt(int.MaxValue);
+            int minDimension = -(int)Math.Sqrt(Math.Abs(int.MinValue));
             QuadTreePointRoot =
-                CreateNode(new Rectangle(int.MinValue / 2, int.MinValue / 2, int.MaxValue, int.MaxValue));
+                CreateNode(new Rectangle(minDimension / 2, minDimension / 2, maxDimension, maxDimension));
         }
 
         /// <summary>

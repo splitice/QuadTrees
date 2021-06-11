@@ -24,6 +24,7 @@ namespace QuadTrees
 
         protected override QuadTreeRectNode<T, RectangleF> CreateNode(RectangleF rect)
         {
+            System.Diagnostics.Debug.Assert(!float.IsInfinity(rect.Width * rect.Height), "Node rectangle area datatype capacity");
             return new QuadTreeRectFNode<T>(rect);
         }
     }
