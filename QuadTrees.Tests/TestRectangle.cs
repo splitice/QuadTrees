@@ -29,7 +29,7 @@ namespace QuadTrees.Tests
         [TestCase]
         public void TestListQuery()
         {
-            QuadTreeRectF<QTreeObject> qtree = new QuadTreeRectF<QTreeObject>();
+            QuadTreeRectF<QTreeObject> qtree = new QuadTreeRectF<QTreeObject>(new RectangleF(float.MinValue/2,float.MinValue/2,float.MaxValue,float.MaxValue));
             qtree.AddRange(new List<QTreeObject>
             {
                 new QTreeObject(new RectangleF(10,10,10,10)),
@@ -42,7 +42,7 @@ namespace QuadTrees.Tests
         [TestCase]
         public void TestListQueryOutput()
         {
-            QuadTreeRectF<QTreeObject> qtree = new QuadTreeRectF<QTreeObject>();
+            QuadTreeRectF<QTreeObject> qtree = new QuadTreeRectF<QTreeObject>(new RectangleF(float.MinValue/2,float.MinValue/2,float.MaxValue,float.MaxValue));
             qtree.AddRange(new List<QTreeObject>
             {
                 new QTreeObject(new RectangleF(10,10,10,10)),
@@ -56,7 +56,7 @@ namespace QuadTrees.Tests
         [TestCase]
         public void TestListQueryEnum()
         {
-            QuadTreeRectF<QTreeObject> qtree = new QuadTreeRectF<QTreeObject>();
+            QuadTreeRectF<QTreeObject> qtree = new QuadTreeRectF<QTreeObject>(new RectangleF(float.MinValue/2,float.MinValue/2,float.MaxValue,float.MaxValue));
             qtree.AddRange(new List<QTreeObject>
             {
                 new QTreeObject(new RectangleF(10,10,10,10)),
@@ -69,7 +69,7 @@ namespace QuadTrees.Tests
         [TestCase]
         public void TestListGetAll()
         {
-            QuadTreeRectF<QTreeObject> qtree = new QuadTreeRectF<QTreeObject>();
+            QuadTreeRectF<QTreeObject> qtree = new QuadTreeRectF<QTreeObject>(new RectangleF(float.MinValue/2,float.MinValue/2,float.MaxValue,float.MaxValue));
             qtree.AddRange(new List<QTreeObject>
             {
                 new QTreeObject(new RectangleF(10,10,10,10)),
@@ -83,7 +83,7 @@ namespace QuadTrees.Tests
         public void TestAddMany()
         {
             Random r = new Random(1000);
-            QuadTreeRectF<QTreeObject> qtree = new QuadTreeRectF<QTreeObject>();
+            QuadTreeRectF<QTreeObject> qtree = new QuadTreeRectF<QTreeObject>(new RectangleF(float.MinValue/2,float.MinValue/2,float.MaxValue,float.MaxValue));
             for (int i = 0; i < 10000; i++)
             {
                 qtree.Add(new QTreeObject(new RectangleF(r.Next(0, 1000) / 1000f, r.Next(0, 1000) / 1000f, r.Next(1000, 20000) / 1000f, r.Next(1000, 20000) / 1000f)));
@@ -100,7 +100,7 @@ namespace QuadTrees.Tests
         public void TestBulkAddManyThreaded()
         {
             Random r = new Random(1000);
-            QuadTreeRectF<QTreeObject> qtree = new QuadTreeRectF<QTreeObject>();
+            QuadTreeRectF<QTreeObject> qtree = new QuadTreeRectF<QTreeObject>(new RectangleF(float.MinValue/2,float.MinValue/2,float.MaxValue,float.MaxValue));
             List<QTreeObject> list = new List<QTreeObject>();
             for (int i = 0; i < 10000; i++)
             {
@@ -119,7 +119,7 @@ namespace QuadTrees.Tests
         public void TestBulkAddMany()
         {
             Random r = new Random(1000);
-            QuadTreeRectF<QTreeObject> qtree = new QuadTreeRectF<QTreeObject>();
+            QuadTreeRectF<QTreeObject> qtree = new QuadTreeRectF<QTreeObject>(new RectangleF(float.MinValue/2,float.MinValue/2,float.MaxValue,float.MaxValue));
             List<QTreeObject> list= new List<QTreeObject>();
             for (int i = 0; i < 10000; i++)
             {
@@ -137,7 +137,7 @@ namespace QuadTrees.Tests
         [TestCase]
         public void TestAddManySame()
         {
-            QuadTreeRectF<QTreeObject> qtree = new QuadTreeRectF<QTreeObject>();
+            QuadTreeRectF<QTreeObject> qtree = new QuadTreeRectF<QTreeObject>(new RectangleF(float.MinValue/2,float.MinValue/2,float.MaxValue,float.MaxValue));
             List<QTreeObject> list = new List<QTreeObject>();
             for (int i = 0; i < 10000; i++)
             {
@@ -153,7 +153,7 @@ namespace QuadTrees.Tests
         [TestCase]
         public void TestBulkAddManySame()
         {
-            QuadTreeRectF<QTreeObject> qtree = new QuadTreeRectF<QTreeObject>();
+            QuadTreeRectF<QTreeObject> qtree = new QuadTreeRectF<QTreeObject>(new RectangleF(float.MinValue/2,float.MinValue/2,float.MaxValue,float.MaxValue));
             List<QTreeObject> list = new List<QTreeObject>();
             for (int i = 0; i < 10000; i++)
             {
@@ -169,7 +169,7 @@ namespace QuadTrees.Tests
         [TestCase]
         public void TestAddSameIndividual()
         {
-            QuadTreeRectF<QTreeObject> qtree = new QuadTreeRectF<QTreeObject>();
+            QuadTreeRectF<QTreeObject> qtree = new QuadTreeRectF<QTreeObject>(new RectangleF(float.MinValue/2,float.MinValue/2,float.MaxValue,float.MaxValue));
             List<QTreeObject> list = new List<QTreeObject>();
             for (int i = 0; i < 10000; i++)
             {

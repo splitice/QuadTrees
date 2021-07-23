@@ -29,7 +29,7 @@ namespace QuadTrees.Tests
         [TestCase]
         public void TestListQuery()
         {
-            QuadTreeRectPointFInverse<QTreeObject> qtree = new QuadTreeRectPointFInverse<QTreeObject>();
+            QuadTreeRectPointFInverse<QTreeObject> qtree = new QuadTreeRectPointFInverse<QTreeObject>(new RectangleF(float.MinValue/2,float.MinValue/2,float.MaxValue,float.MaxValue));
             qtree.AddRange(new List<QTreeObject>
             {
                 new QTreeObject(new RectangleF(10,10,10,10)),
@@ -43,7 +43,7 @@ namespace QuadTrees.Tests
         public void TestListQueryOutput()
         {
             var list = new List<QTreeObject>();
-            QuadTreeRectPointFInverse<QTreeObject> qtree = new QuadTreeRectPointFInverse<QTreeObject>();
+            QuadTreeRectPointFInverse<QTreeObject> qtree = new QuadTreeRectPointFInverse<QTreeObject>(new RectangleF(float.MinValue/2,float.MinValue/2,float.MaxValue,float.MaxValue));
             qtree.AddRange(new List<QTreeObject>
             {
                 new QTreeObject(new RectangleF(10,10,10,10)),
@@ -56,7 +56,7 @@ namespace QuadTrees.Tests
         [TestCase]
         public void TestListQueryEnum()
         {
-            QuadTreeRectPointFInverse<QTreeObject> qtree = new QuadTreeRectPointFInverse<QTreeObject>();
+            QuadTreeRectPointFInverse<QTreeObject> qtree = new QuadTreeRectPointFInverse<QTreeObject>(new RectangleF(float.MinValue/2,float.MinValue/2,float.MaxValue,float.MaxValue));
             qtree.AddRange(new List<QTreeObject>
             {
                 new QTreeObject(new RectangleF(10,10,10,10)),
@@ -69,7 +69,7 @@ namespace QuadTrees.Tests
         [TestCase]
         public void TestListGetAll()
         {
-            QuadTreeRectPointFInverse<QTreeObject> qtree = new QuadTreeRectPointFInverse<QTreeObject>();
+            QuadTreeRectPointFInverse<QTreeObject> qtree = new QuadTreeRectPointFInverse<QTreeObject>(new RectangleF(float.MinValue/2,float.MinValue/2,float.MaxValue,float.MaxValue));
             qtree.AddRange(new List<QTreeObject>
             {
                 new QTreeObject(new RectangleF(10,10,10,10)),

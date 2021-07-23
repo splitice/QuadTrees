@@ -30,7 +30,7 @@ namespace QuadTrees.Tests
         [TestCase]
         public void TestListQuery()
         {
-            QuadTreePointF<QTreeObject> qtree = new QuadTreePointF<QTreeObject>();
+            QuadTreePointF<QTreeObject> qtree = new QuadTreePointF<QTreeObject>(new RectangleF(float.MinValue/2,float.MinValue/2,float.MaxValue,float.MaxValue));
             qtree.AddRange(new List<QTreeObject>
             {
                 new QTreeObject(new PointF(10,10)),
@@ -43,7 +43,7 @@ namespace QuadTrees.Tests
         [TestCase]
         public void TestListQueryOutput()
         {
-            QuadTreePointF<QTreeObject> qtree = new QuadTreePointF<QTreeObject>();
+            QuadTreePointF<QTreeObject> qtree = new QuadTreePointF<QTreeObject>(new RectangleF(float.MinValue/2,float.MinValue/2,float.MaxValue,float.MaxValue));
             qtree.AddRange(new List<QTreeObject>
             {
                 new QTreeObject(new PointF(10,10)),
@@ -57,7 +57,7 @@ namespace QuadTrees.Tests
         [TestCase]
         public void TestListQueryEnum()
         {
-            QuadTreePointF<QTreeObject> qtree = new QuadTreePointF<QTreeObject>();
+            QuadTreePointF<QTreeObject> qtree = new QuadTreePointF<QTreeObject>(new RectangleF(float.MinValue/2,float.MinValue/2,float.MaxValue,float.MaxValue));
             qtree.AddRange(new List<QTreeObject>
             {
                 new QTreeObject(new PointF(10,10)),
@@ -70,7 +70,7 @@ namespace QuadTrees.Tests
         [TestCase]
         public void TestListGetAll()
         {
-            QuadTreePointF<QTreeObject> qtree = new QuadTreePointF<QTreeObject>();
+            QuadTreePointF<QTreeObject> qtree = new QuadTreePointF<QTreeObject>(new RectangleF(float.MinValue/2,float.MinValue/2,float.MaxValue,float.MaxValue));
             qtree.AddRange(new List<QTreeObject>
             {
                 new QTreeObject(new PointF(10,10)),
