@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31424.327
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QuadTrees", "Quadtrees\QuadTrees.csproj", "{FF3088BC-0BEF-4AF0-ACE3-9406D9F985A7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QuadTrees", "QuadTrees\QuadTrees.csproj", "{FF3088BC-0BEF-4AF0-ACE3-9406D9F985A7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuadTrees.Tests", "QuadTrees.Tests\QuadTrees.Tests.csproj", "{7A1CB268-12FF-4C94-BFE1-2DADDEEE9070}"
 EndProject

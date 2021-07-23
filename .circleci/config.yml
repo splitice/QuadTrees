@@ -24,8 +24,8 @@ jobs:
           command: dotnet build
       - run:
           name: NUnit Tests
-          command: dotnet test Quadtrees.Tests
+          command: dotnet test QuadTrees.Tests
       - run:
           name: NuGet upload
           command: |
-            bash nuget-upload.sh Quadtrees
+            bash nuget-upload.sh QuadTrees

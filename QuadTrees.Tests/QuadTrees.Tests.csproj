@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Quadtrees\QuadTrees.csproj" />
+    <ProjectReference Include="..\QuadTrees\QuadTrees.csproj" />
   </ItemGroup>
 
 </Project>
