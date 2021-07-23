@@ -23,12 +23,6 @@ namespace QuadTrees
         {
         }
 
-        public QuadTreePoint()
-            : base()
-        {
-
-        }
-
         protected override QuadTreePointNode<T> CreateNode(Rectangle rect)
         {
             return new QuadTreePointNode<T>(rect);

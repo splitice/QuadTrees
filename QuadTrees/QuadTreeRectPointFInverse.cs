@@ -18,10 +18,6 @@ namespace QuadTrees
         {
         }
 
-        public QuadTreeRectPointFInverse()
-        {
-        }
-
         protected override QuadTreeRectNode<T, PointF> CreateNode(RectangleF rect)
         {
             return new QuadTreeRectPointFInvNode<T>(rect);

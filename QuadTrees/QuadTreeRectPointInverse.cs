@@ -19,10 +19,6 @@ namespace QuadTrees
         {
         }
 
-        public QuadTreeRectPointInverse()
-        {
-        }
-
         protected override QuadTreeRectNode<T, Point> CreateNode(Rectangle rect)
         {
             return new QuadTreeRectPointInvNode<T>(rect);

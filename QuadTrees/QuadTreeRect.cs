@@ -19,10 +19,6 @@ namespace QuadTrees
         {
         }
 
-        public QuadTreeRect()
-        {
-        }
-
         protected override QuadTreeRectNode<T, Rectangle> CreateNode(Rectangle rect)
         {
             return new QuadTreeRectNode<T>(rect);
