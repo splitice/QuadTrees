@@ -1,0 +1,31 @@
+version: 2
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build:
+          filters:
+            tags:
+              ignore: /skip-ci/
+jobs:
+  build:
+    docker:
+      - image: mcr.microsoft.com/dotnet/core/sdk:3.1-buster
+      
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+      - run: |
+          apt-get update
+          apt-get install -y git
+      - run:
+          name: Build
+          command: dotnet build
+      - run:
+          name: NUnit Tests
+          command: dotnet test Quadtrees.Tests
+      - run:
+          name: NuGet upload
+          command: |
+            bash nuget-upload.sh Quadtrees
