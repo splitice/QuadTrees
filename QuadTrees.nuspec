@@ -12,8 +12,13 @@
 		<releaseNotes>Automatic Updates via GitHub</releaseNotes>
 		<copyright>Copyright Never</copyright>
 		<language>en-US</language>
+		<dependencies>
+			<group targetFramework=".netcoreapp3.1" />
+			<group targetFramework=".netstandard2.0" />
+		</dependencies>
 	</metadata>
 	<files>
-		<file src="QuadTrees/bin/Release/QuadTrees.dll" target="lib" />
+		<file src="QuadTrees/bin/Release/netcoreapp3.1/QuadTrees.dll" target="lib/netcoreapp3.1" />
+		<file src="QuadTrees/bin/Release/netstandard2.0/QuadTrees.dll" target="lib/netstandard2.0" />
 	</files>
 </package>
