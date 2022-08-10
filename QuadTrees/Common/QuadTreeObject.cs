@@ -8,7 +8,7 @@ namespace QuadTrees.Common
     public class QuadTreeObject<T, TPointNode> where TPointNode: class
     {
         private TPointNode _owner;
-        private T _data;
+        internal T _data;
 
         /// <summary>
         /// The wrapped data value

@@ -4,11 +4,26 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace QuadTrees.Common
 {
+
+    /// <summary>
+    /// A delegate used to iterate over tree objects
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public delegate void ForObject<T>(ref T obj);
+    
+    /// <summary>
+    /// A delegate used to iterate over tree objects with a definied payload to prevent memory allocations 
+    /// </summary>
+    /// <typeparam name="P"></typeparam>
+    /// <typeparam name="T"></typeparam>
+    public delegate void ForObject<P, T>(ref P payload, ref T obj);
+    
     public abstract class QuadTreeCommon<TObject, TNode, TQuery> : ICollection<TObject> where TNode : QuadTreeNodeCommon<TObject, TNode, TQuery>
     {
         #region Private Members
@@ -70,9 +85,21 @@ namespace QuadTrees.Common
         }
 
         /// <summary>
+        /// Counts the amount of objects inside the rect and returns the size. 
+        /// </summary>
+        /// <param name="rect"></param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int ObjectCount(TQuery rect) 
+        {
+            return QuadTreePointRoot.ObjectCount(rect);
+        }
+        
+        /// <summary>
         /// Get the objects in this tree that intersect with the specified rectangle.
         /// </summary>
         /// <param name="rect">The Rectangle to find objects in.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public List<TObject> GetObjects(TQuery rect)
         {
             return QuadTreePointRoot.GetObjects(rect);
@@ -94,11 +121,13 @@ namespace QuadTrees.Common
         /// </summary>
         /// <param name="rect">The Rectangle to find objects in.</param>
         /// <param name="results">A reference to a list that will be populated with the results.</param>
-        public void GetObjects(TQuery rect, List<TObject> results)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void GetObjects(TQuery rect, List<TObject> results) 
         {
-            Action<TObject> cb = results.Add;
+            
+            ForObject<TObject> cb = (ref TObject o) => results.Add(o);
 #if DEBUG
-        cb = (a) =>
+        cb = (ref TObject a) =>
         {
             Debug.Assert(!results.Contains(a));
             results.Add(a);
@@ -108,7 +137,8 @@ namespace QuadTrees.Common
         }
 
 
-        public void GetObjects(TQuery rect, Action<TObject> add)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void GetObjects(TQuery rect, ForObject<TObject> add)
         {
             QuadTreePointRoot.GetObjects(rect, add);
         }

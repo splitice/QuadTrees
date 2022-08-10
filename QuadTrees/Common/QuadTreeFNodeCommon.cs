@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using QuadTrees.Helper;
 
@@ -355,10 +356,8 @@ namespace QuadTrees.Common
                 if (HasNoMoreThan(MaxObjectsPerNode))
                 {
                     /* Has few nodes, your children are my children */
-
-                    Dictionary<T, QuadTreeObject<T, TNode>> buffer =
-                        new Dictionary<T, QuadTreeObject<T, TNode>>(MaxObjectsPerNode);
-                    GetAllObjects((a) => buffer.Add(a.Data, a));
+                    Dictionary<T, QuadTreeObject<T, TNode>> buffer = new Dictionary<T, QuadTreeObject<T, TNode>>(MaxObjectsPerNode);
+                    GetAllObjects((ref QuadTreeObject<T, TNode> a) => buffer.Add(a.Data, a));
 
 #if DEBUG
                     Dictionary<T, TNode> oldOwners = buffer.ToDictionary((a) => a.Key, (b) => b.Value.Owner);
@@ -429,7 +428,7 @@ namespace QuadTrees.Common
                 {
                     /* If has an empty child & no more than OptimizeThreshold worth of data - rebuild more optimally */
                     Dictionary<T, QuadTreeObject<T, TNode>> buffer = new Dictionary<T, QuadTreeObject<T, TNode>>();
-                    GetAllObjects((a) => buffer.Add(a.Data, a));
+                    GetAllObjects((ref QuadTreeObject<T, TNode> a) => buffer.Add(a.Data, a));
 
 #if DEBUG
                     Dictionary<T, TNode> oldOwners = buffer.ToDictionary((a) => a.Key, (b) => b.Value.Owner);
@@ -898,7 +897,7 @@ namespace QuadTrees.Common
         public List<T> GetObjects(TQuery searchRect)
         {
             var results = new List<T>();
-            GetObjects(searchRect, results.Add);
+            GetObjects(searchRect, (ref T obj) => results.Add(obj));
             return results;
         }
 
@@ -983,7 +982,99 @@ namespace QuadTrees.Common
         /// </summary>
         /// <param name="searchRect">The RectangleF to find objects in.</param>
         /// <param name="put"></param>
-        public void GetObjects(TQuery searchRect, Action<T> put)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int ObjectCount(TQuery searchRect) {
+            
+            var count = 0;
+            
+            // We can't do anything if the results list doesn't exist
+            if (QueryContains(searchRect, Rect))
+            {
+                // If the search area completely contains this quad, just get every object this quad and all it's children have
+                count += AllObjectsCount();
+            }
+            else if (QueryIntersects(searchRect, Rect))
+            {
+                // Otherwise, if the quad isn't fully contained, only add objects that intersect with the search rectangle
+                if (_objects != null)
+                {
+                    for (int i = 0; i < _objectCount; i++)
+                    {
+                        var data = _objects[i].Data;
+                        if (CheckIntersects(searchRect, data)) {
+                            count++;
+                        }
+                    }
+                }
+
+                // Get the objects for the search RectangleF from the children
+                if (ChildTl != null)
+                {
+                    Debug.Assert(ChildTl != this);
+                    Debug.Assert(ChildTr != this);
+                    Debug.Assert(ChildBl != this);
+                    Debug.Assert(ChildBr != this);
+                    count += ChildTl.ObjectCount(searchRect);
+                    count += ChildTr.ObjectCount(searchRect);
+                    count += ChildBl.ObjectCount(searchRect);
+                    count += ChildBr.ObjectCount(searchRect);
+                }
+                else
+                {
+                    Debug.Assert(ChildTr == null);
+                    Debug.Assert(ChildBl == null);
+                    Debug.Assert(ChildBr == null);
+                }
+            }
+
+            return count;
+        }
+
+        /// <summary>
+        /// Counts all objects in the node and returns their size 
+        /// </summary>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int AllObjectsCount() {
+
+            var count = 0;
+            
+            // If this Quad has objects, add them
+            if (_objects != null)
+            {
+                Debug.Assert(_objectCount != 0);
+                Debug.Assert(_objectCount == _objects.Count((a) => a != null));
+
+                for (int i = 0; i < _objectCount; i++)
+                {
+                    if (_objects[i].Owner != this) break; //todo: better?
+                    count++;
+                }
+            }
+            else
+            {
+                Debug.Assert(_objectCount == 0);
+            }
+
+            // If we have children, get their objects too
+            if (ChildTl != null)
+            {
+                count += ChildTl.AllObjectsCount();
+                count += ChildTr.AllObjectsCount();
+                count += ChildBl.AllObjectsCount();
+                count += ChildBr.AllObjectsCount();
+            }
+
+            return count;
+        }
+        
+        /// <summary>
+        /// Get the objects in this tree that intersect with the specified rectangle.
+        /// </summary>
+        /// <param name="searchRect">The RectangleF to find objects in.</param>
+        /// <param name="put"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void GetObjects(TQuery searchRect, ForObject<T> put)
         {
             // We can't do anything if the results list doesn't exist
             if (QueryContains(searchRect, Rect))
@@ -1001,7 +1092,7 @@ namespace QuadTrees.Common
                         var data = _objects[i].Data;
                         if (CheckIntersects(searchRect, data))
                         {
-                            put(data);
+                            put(ref data);
                         }
                     }
                 }
@@ -1026,18 +1117,19 @@ namespace QuadTrees.Common
                 }
             }
         }
-
-
+        
         /// <summary>
         /// Get all objects in this Quad, and it's children.
         /// </summary>
         /// <param name="put">A reference to a list in which to store the objects.</param>
-        public void GetAllObjects(Action<T> put)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void GetAllObjects(ForObject<T> put)
         {
-            GetAllObjects((a) => put(a.Data));
+            GetAllObjects((ref QuadTreeObject<T, TNode> o) => put(ref o._data));
         }
 
-        public void GetAllObjects(Action<QuadTreeObject<T, TNode>> put)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void GetAllObjects(ForObject<QuadTreeObject<T, TNode>> put)
         {
             // If this Quad has objects, add them
             if (_objects != null)
@@ -1048,7 +1140,7 @@ namespace QuadTrees.Common
                 for (int i = 0; i < _objectCount; i++)
                 {
                     if (_objects[i].Owner != this) break; //todo: better?
-                    put(_objects[i]);
+                    put(ref _objects[i]);
                 }
             }
             else
@@ -1064,6 +1156,182 @@ namespace QuadTrees.Common
                 ChildBl.GetAllObjects(put);
                 ChildBr.GetAllObjects(put);
             }
+        }
+        
+        /// <summary>
+        /// Get the objects in this tree that intersect with the specified rectangle.
+        /// </summary>
+        /// <param name="searchRect">The RectangleF to find objects in.</param>
+        /// <param name="put"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void GetObjects<P>(TQuery searchRect, ref P payload, ForObject<P,T> put)
+        {
+            // We can't do anything if the results list doesn't exist
+            if (QueryContains(searchRect, Rect))
+            {
+                // If the search area completely contains this quad, just get every object this quad and all it's children have
+                GetAllObjects(ref payload, put);
+            }
+            else if (QueryIntersects(searchRect, Rect))
+            {
+                // Otherwise, if the quad isn't fully contained, only add objects that intersect with the search rectangle
+                if (_objects != null)
+                {
+                    for (int i = 0; i < _objectCount; i++)
+                    {
+                        var data = _objects[i].Data;
+                        if (CheckIntersects(searchRect, data))
+                        {
+                            put(ref payload, ref data);
+                        }
+                    }
+                }
+
+                // Get the objects for the search RectangleF from the children
+                if (ChildTl != null)
+                {
+                    Debug.Assert(ChildTl != this);
+                    Debug.Assert(ChildTr != this);
+                    Debug.Assert(ChildBl != this);
+                    Debug.Assert(ChildBr != this);
+                    ChildTl.GetObjects(searchRect, ref payload, put);
+                    ChildTr.GetObjects(searchRect, ref payload, put);
+                    ChildBl.GetObjects(searchRect, ref payload, put);
+                    ChildBr.GetObjects(searchRect, ref payload, put);
+                }
+                else
+                {
+                    Debug.Assert(ChildTr == null);
+                    Debug.Assert(ChildBl == null);
+                    Debug.Assert(ChildBr == null);
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Get all objects in this Quad, and it's children.
+        /// </summary>
+        /// <param name="put">A reference to a list in which to store the objects.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void GetAllObjects<P>(ref P payload, ForObject<P,T> put)
+        {
+            GetAllObjects(ref payload, (ref P load, ref QuadTreeObject<T, TNode> o) => put(ref load, ref o._data));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void GetAllObjects<P>(ref P payload, ForObject<P, QuadTreeObject<T, TNode>> put)
+        {
+            // If this Quad has objects, add them
+            if (_objects != null)
+            {
+                Debug.Assert(_objectCount != 0);
+                Debug.Assert(_objectCount == _objects.Count((a) => a != null));
+
+                for (int i = 0; i < _objectCount; i++)
+                {
+                    if (_objects[i].Owner != this) break; //todo: better?
+                    put(ref payload, ref _objects[i]);
+                }
+            }
+            else
+            {
+                Debug.Assert(_objectCount == 0);
+            }
+
+            // If we have children, get their objects too
+            if (ChildTl != null)
+            {
+                ChildTl.GetAllObjects(ref payload, put);
+                ChildTr.GetAllObjects(ref payload, put);
+                ChildBl.GetAllObjects(ref payload, put);
+                ChildBr.GetAllObjects(ref payload, put);
+            }
+        }
+
+        
+        /// <summary>
+        /// Get the objects in this tree that intersect with the specified rectangle.
+        /// </summary>
+        /// <param name="searchRect">The RectangleF to find objects in.</param>
+        /// <param name="put"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int GetObjects(TQuery searchRect, Span<T> array, int count = 0)
+        {
+            // We can't do anything if the results list doesn't exist
+            if (QueryContains(searchRect, Rect))
+            {
+                // If the search area completely contains this quad, just get every object this quad and all it's children have
+                count = GetAllObjects(array, count);
+            }
+            else if (QueryIntersects(searchRect, Rect))
+            {
+                // Otherwise, if the quad isn't fully contained, only add objects that intersect with the search rectangle
+                if (_objects != null)
+                {
+                    for (int i = 0; i < _objectCount; i++)
+                    {
+                        var data = _objects[i].Data;
+                        if (CheckIntersects(searchRect, data)) {
+                            array[count] = data;
+                            count++;
+                        }
+                    }
+                }
+
+                // Get the objects for the search RectangleF from the children
+                if (ChildTl != null)
+                {
+                    Debug.Assert(ChildTl != this);
+                    Debug.Assert(ChildTr != this);
+                    Debug.Assert(ChildBl != this);
+                    Debug.Assert(ChildBr != this);
+                    count = ChildTl.GetObjects(searchRect, array, count);
+                    count = ChildTr.GetObjects(searchRect, array, count);
+                    count = ChildBl.GetObjects(searchRect, array, count);
+                    count = ChildBr.GetObjects(searchRect, array, count);
+                }
+                else
+                {
+                    Debug.Assert(ChildTr == null);
+                    Debug.Assert(ChildBl == null);
+                    Debug.Assert(ChildBr == null);
+                }
+            }
+
+            return count;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int GetAllObjects(Span<T> array, int count = 0)
+        {
+            // If this Quad has objects, add them
+            if (_objects != null)
+            {
+                Debug.Assert(_objectCount != 0);
+                Debug.Assert(_objectCount == _objects.Count((a) => a != null));
+
+                for (int i = 0; i < _objectCount; i++)
+                {
+                    if (_objects[i].Owner != this) break; //todo: better?
+                    array[count] = _objects[i].Data;
+                    count++;
+                }
+            }
+            else
+            {
+                Debug.Assert(_objectCount == 0);
+            }
+
+            // If we have children, get their objects too
+            if (ChildTl != null)
+            {
+                count = ChildTl.GetAllObjects(array, count);
+                count = ChildTr.GetAllObjects(array, count);
+                count = ChildBl.GetAllObjects(array, count);
+                count = ChildBr.GetAllObjects(array, count);
+            }
+
+            return count;
         }
 
         private PointF CalculateBalance(out float top, out float bottom, out float left, out float right)
