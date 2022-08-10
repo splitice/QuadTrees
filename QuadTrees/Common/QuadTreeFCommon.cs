@@ -167,11 +167,14 @@ namespace QuadTrees.Common
         /// Moves the object in the tree
         /// </summary>
         /// <param name="item">The item that has moved</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Move(TObject item)
         {
             QuadTreeObject<TObject, TNode> obj;
-            if (WrappedDictionary.TryGetValue(item, out obj))
-            {
+            if (WrappedDictionary.TryGetValue(item, out obj)) {
+                
+                // Update data ( primarly for structs ) and relocate 
+                obj._data = item;
                 obj.Owner.Relocate(obj);
 
                 Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
@@ -181,6 +184,27 @@ namespace QuadTrees.Common
             return false;
         }
 
+        /// <summary>
+        /// Moves the object in the tree
+        /// </summary>
+        /// <param name="item">The item that has moved</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Move(ref TObject item)
+        {
+            QuadTreeObject<TObject, TNode> obj;
+            if (WrappedDictionary.TryGetValue(item, out obj)) {
+                
+                // Update data ( primarly for structs ) and relocate 
+                obj._data = item;
+                obj.Owner.Relocate(obj);
+
+                Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
+                return true;
+            }
+            Debug.Assert(WrappedDictionary.Count == QuadTreePointRoot.Count);
+            return false;
+        }
+        
         #endregion
 
         #region ICollection<T> Members

@@ -17,8 +17,8 @@ namespace QuadTrees.Tests
         {
             private PointF _rect;
 
-            public PointF Point
-            {
+            public PointF Point {
+                set { _rect = value; }
                 get { return _rect; }
             }
 
@@ -28,19 +28,34 @@ namespace QuadTrees.Tests
             }
         }
         
-        struct QTreeObjectStruct: IPointFQuadStorable
-        {
+        struct QTreeObjectStruct: IPointFQuadStorable {
+
+            public int uniqueId;
             private PointF _rect;
 
             public PointF Point
             {
+                set { _rect = value; }
                 get { return _rect; }
             }
 
-            public QTreeObjectStruct(PointF rect)
-            {
+            public QTreeObjectStruct(int uniqueId, PointF rect) {
+                this.uniqueId = uniqueId;
                 _rect = rect;
             }
+
+            public bool Equals(QTreeObjectStruct other) {
+                return uniqueId == other.uniqueId;
+            }
+
+            public override bool Equals(object obj) {
+                return obj is QTreeObjectStruct other && Equals(other);
+            }
+
+            public override int GetHashCode() {
+                return uniqueId;
+            }
+
         }
         
         public struct Payload {
@@ -196,12 +211,12 @@ namespace QuadTrees.Tests
         public void TestGetObjectsArrayStack() {
 
             var list = new List<QTreeObjectStruct> {
-                new QTreeObjectStruct(new PointF(10, 10)),
-                new QTreeObjectStruct(new PointF(11, 11)),
-                new QTreeObjectStruct(new PointF(100, 10)),
-                new QTreeObjectStruct(new PointF(12, 12)),
-                new QTreeObjectStruct(new PointF(13, 13)),
-                new QTreeObjectStruct(new PointF(-1000, 1000))
+                new QTreeObjectStruct(1,new PointF(10, 10)),
+                new QTreeObjectStruct(2,new PointF(11, 11)),
+                new QTreeObjectStruct(3,new PointF(100, 10)),
+                new QTreeObjectStruct(4,new PointF(12, 12)),
+                new QTreeObjectStruct(5,new PointF(13, 13)),
+                new QTreeObjectStruct(6,new PointF(-1000, 1000))
             };
             
             QuadTreePointF<QTreeObjectStruct> qtree = new QuadTreePointF<QTreeObjectStruct>(new RectangleF(float.MinValue/2,float.MinValue/2,float.MaxValue,float.MaxValue));
@@ -217,6 +232,42 @@ namespace QuadTrees.Tests
             Assert.AreEqual(array[1], list[1]);
             Assert.AreEqual(array[2], list[3]);
             Assert.AreEqual(array[3], list[4]);
+        }
+        
+        [TestCase]
+        public void TestMove() {
+            
+            var obj = new QTreeObject(new PointF(5, 5));
+            QuadTreePointF<QTreeObject> qtree = new QuadTreePointF<QTreeObject>(new RectangleF(float.MinValue/2,float.MinValue/2,float.MaxValue,float.MaxValue));
+            qtree.AddRange(new List<QTreeObject>
+            {
+                obj,
+                new QTreeObject(new PointF(-1000,1000))
+            });
+
+            obj.Point = new PointF(11, 11);
+            qtree.Move(obj);
+
+            var list = qtree.GetObjects(new RectangleF(10, 10, 20, 20));
+            Assert.AreEqual(1, list.Count);
+        }
+        
+        [TestCase]
+        public void TestMoveStruct() {
+            
+            var obj = new QTreeObjectStruct(1,new PointF(5, 5));
+            QuadTreePointF<QTreeObjectStruct> qtree = new QuadTreePointF<QTreeObjectStruct>(new RectangleF(float.MinValue/2,float.MinValue/2,float.MaxValue,float.MaxValue));
+            qtree.AddRange(new List<QTreeObjectStruct>
+            {
+                obj,
+                new QTreeObjectStruct(2,new PointF(-1000,1000))
+            });
+
+            obj.Point = new PointF(11, 11);
+            qtree.Move(obj);
+
+            var list = qtree.GetObjects(new RectangleF(10, 10, 20, 20));
+            Assert.AreEqual(1, list.Count);
         }
     }
 }
