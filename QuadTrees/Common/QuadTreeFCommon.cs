@@ -103,6 +103,28 @@ namespace QuadTrees.Common
         }
         
         /// <summary>
+        /// Queries all entities within the range and provides a delegate to interact with each single object. 
+        /// </summary>
+        /// <param name="rect"></param>
+        /// <param name="add"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void GetObjects(TQuery rect, ForObjectStruct<TObject> add)
+        {
+            QuadTreePointRoot.GetObjects(rect, add);
+        }
+        
+        /// <summary>
+        /// Queries all entities within the range and provides a delegate with payload to interact with each single object. 
+        /// </summary>
+        /// <param name="rect"></param>
+        /// <param name="add"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void GetObjects<P>(TQuery rect, ref P payload, ForObjectStruct<P,TObject> add)
+        {
+            QuadTreePointRoot.GetObjects(rect, ref payload, add);
+        }
+        
+        /// <summary>
         /// Get the objects in this tree that intersect with the specified rectangle.
         /// </summary>
         /// <param name="rect">The RectangleF to find objects in.</param>
@@ -111,17 +133,6 @@ namespace QuadTrees.Common
         {
             return QuadTreePointRoot.GetObjects(rect);
         }
-
-        /// <summary>
-        /// Query the QuadTree and return an enumerator for the results
-        /// </summary>
-        /// <param name="rect"></param>
-        /// <returns></returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public IEnumerable<TObject> EnumObjects(TQuery rect)
-        {
-            return QuadTreePointRoot.EnumObjects(rect);
-        } 
 
 
         /// <summary>
@@ -132,15 +143,31 @@ namespace QuadTrees.Common
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void GetObjects(TQuery rect, List<TObject> results)
         {
-            ForObject<TObject> cb = (ref TObject o) => results.Add(o);
+
+            // If generic is struct, use the specialised struct delegate to prevent struct copies
+            if (typeof(TObject).IsValueType) {
+                
+                ForObjectStruct<TObject> cb = (ref TObject o) => results.Add(o);
 #if DEBUG
-            cb = (ref TObject a) =>
-            {
-                Debug.Assert(!results.Contains(a));
-                results.Add(a);
-            };
+                cb = (ref TObject a) => {
+                    Debug.Assert(!results.Contains(a));
+                    results.Add(a);
+                };
 #endif
-            QuadTreePointRoot.GetObjects(rect, cb);
+                QuadTreePointRoot.GetObjects(rect, cb);
+            }
+            else {
+                
+                // If generic is class however use the other delegate to prevent pointer copies
+                ForObject<TObject> cb = results.Add;
+#if DEBUG
+                cb = (a) => {
+                    Debug.Assert(!results.Contains(a));
+                    results.Add(a);
+                };
+#endif
+                QuadTreePointRoot.GetObjects(rect, cb);
+            }
         }
         
         /// <summary>
@@ -154,6 +181,17 @@ namespace QuadTrees.Common
         }
         
 
+        /// <summary>
+        /// Query the QuadTree and return an enumerator for the results
+        /// </summary>
+        /// <param name="rect"></param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public IEnumerable<TObject> EnumObjects(TQuery rect)
+        {
+            return QuadTreePointRoot.EnumObjects(rect);
+        } 
+        
         /// <summary>
         /// Get all objects in this Quad, and it's children.
         /// </summary>
