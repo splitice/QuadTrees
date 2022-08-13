@@ -9,7 +9,7 @@ NuGet packages published for dotnetcore 3.1
 ## Example
 
 ```
-QuadTreeRect<QTreeObject> qtree = new QuadTreeRect<QTreeObject>();
+QuadTreeRectF<QTreeObject> qtree = new QuadTreeRectF<QTreeObject>(-100000, 10000, 10000000, 1000000);
 qtree.AddRange(new List<QTreeObject>
 {
 	new QTreeObject(new RectangleF(10,10,10,10)), // Expected result
