@@ -1,0 +1,16 @@
+{
+  "name": "quadtrees",
+  "version": "1.0.4",
+  "displayName": "QuadTrees",
+  "description": "High Performance Quad Tree Implementations for C# (Point, Rect and PointInv).",
+  "unity":"2021.3",
+  "unityRelease":"0f1",
+  "author": {
+    "name": "Mathew Heard"
+  },
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/0reo/QuadTrees/issues"
+  },
+  "homepage": "https://github.com/0reo/QuadTrees#readme"
+}
